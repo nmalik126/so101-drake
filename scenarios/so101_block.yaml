@@ -2,14 +2,14 @@ directives:
 
 - add_model:
     name: mat
-    file: file://~/so101-drake/models/objects/mat.sdf
+    file: file:///home/noor/so101-drake/models/objects/mat.sdf
 - add_weld:
     parent: world
     child: mat::mat_link
 
 - add_model:
     name: so101
-    file: file://~/so101-drake/models/SO101/so101_new_calib_drake.urdf
+    file: file:///home/noor/so101-drake/models/SO101/so101_new_calib_drake.urdf
     default_joint_positions:
         shoulder_pan: [0]
         shoulder_lift: [-1.75]
@@ -26,7 +26,7 @@ directives:
 
 - add_model:
     name: box
-    file: file://~/so101-drake/models/objects/box.sdf
+    file: file:///home/noor/so101-drake/models/objects/box.sdf
 
 model_drivers:
     so101: !InverseDynamicsDriver {}
