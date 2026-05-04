@@ -1,0 +1,38 @@
+directives:
+
+- add_model:
+    name: mat
+    file: file://~/so101-drake/models/objects/mat.sdf
+- add_weld:
+    parent: world
+    child: mat::mat_link
+
+- add_model:
+    name: so101
+    file: file://~/so101-drake/models/SO101/so101_new_calib_drake.urdf
+    default_joint_positions:
+        shoulder_pan: [0]
+        shoulder_lift: [-1.75]
+        elbow_flex: [1.5]
+        wrist_flex: [1.0]
+        wrist_roll: [0]
+        gripper: [0]
+- add_weld:
+    parent: mat::mat_link
+    child: so101::base_link
+    X_PC:
+        translation: [0, -0.1775, 0.0074]
+        rotation: !Rpy { deg: [0, 0, 90] }
+
+- add_model:
+    name: box
+    file: file://~/so101-drake/models/objects/box.sdf
+
+model_drivers:
+    so101: !InverseDynamicsDriver {}
+
+plant_config:
+    time_step: 1e-2
+    # contact_model: hydroelastic
+    # contact_surface_representation: triangle
+    # discrete_contact_approximation: similar

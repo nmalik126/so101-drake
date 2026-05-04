@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+    <model name="mat">
+        <pose>0 0 0 0 0 0</pose>
+        <link name="mat_link">
+            <inertial>
+                <mass>0.1</mass>
+                <inertia>
+                    <ixx>0.001334</ixx>
+                    <ixy>0.0</ixy>
+                    <ixz>0.0</ixz>
+                    <iyy>0.001334</iyy>
+                    <iyz>0.0</iyz>
+                    <izz>0.002667</izz>
+                </inertia>
+            </inertial>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.4 0.4 0.01</size>    
+                    </box>
+                </geometry>
+                <drake:proximity_properties>
+                    <drake:compliant_hydroelastic/>
+                    <drake:hydroelastic_modulus>1e7</drake:hydroelastic_modulus>
+                    <!-- <drake:rigid_hydroelastic/> -->
+                    <drake:mu_dynamic>0.1</drake:mu_dynamic>
+                    <!-- <drake:hunt_crossley_dissipation>10.0</drake:hunt_crossley_dissipation> -->
+                </drake:proximity_properties>
+            </collision>
+            <visual name="visual">
+                <geometry>
+                    <box>
+                        <size>0.4 0.4 0.01</size>    
+                    </box>
+                </geometry>
+                <material>
+                    <diffuse>0.25 0.25 0.25 1.0</diffuse>
+                </material>
+            </visual>
+        </link>
+    </model>
+</sdf>
