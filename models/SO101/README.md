@@ -36,14 +36,20 @@ One solution is to break the L-shaped mesh into two rectangular components. Howe
 | <img src="../../media/gripper_nonconvex_collision_geometry.png" style="width: 50%; height: auto;"> |
 | *Non-convex collision geometry* |
 
-The file `so101_new_calib_drake.urdf` uses rigid-hydroelastic collision geometry for both of the SO-101's gripper fingers
+The file `so101_new_calib_drake.urdf` uses rigid-hydroelastic collision geometry for both of the SO-101's gripper fingers.
 
 ### Configure Reflected Inertia
 
-By default, Drake will not consider reflected motor inertia in dynamics calculations (see [the documentation](https://drake.mit.edu/doxygen_cxx/classdrake_1_1multibody_1_1_joint_actuator.html#reflected_inertia) for details). This is problematic for the SO-101 follower arm, whose six motors all use 345:1 gear reductions. If reflected inertia is left unmodeled, the arm is barely able to pick up a block weighing 0.1 grams:
+By default, Drake will not consider reflected motor inertia in dynamics calculations (see [the documentation](https://drake.mit.edu/doxygen_cxx/classdrake_1_1multibody_1_1_joint_actuator.html#reflected_inertia) for details). This is problematic for the SO-101 follower arm, whose six motors all use 345:1 gear reductions. If reflected inertia is left unmodeled, the arm is barely able to pick up a block weighing 1 gram:
 
-gif of problem
+|  |
+| :---: |
+| <img src="../../media/no_reflected_inertia_failed_pick.gif" style="width: 50%; height: auto;"> |
+| *Reflected inertia not modeled, fails to pick up 1 gram block* |
 
 The solution is to configure the gear ratio and rotor inertia for each actuator. The datasheet for the Feetech STS3215 C001 does not specify rotor inertia, so a value of `2e-6` (used in `so101_new_calib_drake.urdf`) was empirically estimated in Drake (feel free to change this value to a more accurate number based on stronger findings or evidence). With reflected inertia accurately modeled, the arm is able to pick up a block weighing 400 grams (the maximum payload capacity of the SO-101):
 
-gif of solution
+|  |
+| :---: |
+| <img src="../../media/reflected_inertia_successful_pick.gif" style="width: 50%; height: auto;"> |
+| *Reflected inertia modeled, picks up 400 gram block* |

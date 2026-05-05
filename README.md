@@ -1,9 +1,9 @@
 # so101-drake
 Manipulation experiments with the SO-101 arm in Drake
 
-Most examples derived from [drake tutorials](https://github.com/RobotLocomotion/drake/tree/master/tutorials) and [manipulation exercies](https://github.com/RussTedrake/manipulation/tree/master/manipulation/exercises). See Russ Tedrake's [manipulation course](https://manipulation.csail.mit.edu/) for relevant technical background
+Most examples derived from [drake tutorials](https://github.com/RobotLocomotion/drake/tree/master/tutorials) and [manipulation exercies](https://github.com/RussTedrake/manipulation/tree/master/manipulation/exercises). See Prof. Russ Tedrake's [manipulation course](https://manipulation.csail.mit.edu/) for relevant technical background
 
-Contributions primarily relate to integration with the SO-101 arm. See [here](models/SO101/README.md) for derivation of the Drake-compatible SO-101 model.
+Contributions primarily relate to integration with the SO-101 arm. See [here](models/SO101/README.md) for derivation of a Drake-compatible SO-101 model
 
 ## Installation
 
@@ -31,5 +31,6 @@ Before using the scenarios under `/scenarios`, change the model absolute file pa
 ## Repository Index
 
 - `/examples` - Jupyter notebooks demonstrating example tasks with the SO-101 in Drake
+- `/media` - Images and GIFs used in READMEs
 - `/models` - SDFs and URDFs for robot and objects
 - `/scenarios` - YAMLs for Drake scenarios
