@@ -2,6 +2,8 @@
 
 This document describes how the Drake-compatible URDF `so101_new_calib_drake.urdf` was prepared
 
+(*apologies for the bad image formatting*)
+
 ## Source URDF
 
 The source SO-101 URDF `so101_new_calib.urdf` and associated model assets can be obtained from [the project page](https://github.com/TheRobotStudio/SO-ARM100/tree/main/Simulation/SO101). They are copied here for convenience.
@@ -22,11 +24,17 @@ Although the source URDF is parseable by Drake after running `make_drake_compati
 
 By default, Drake will approximate each collision geometry by its convex hull. This is problematic for `gripper_link` in the SO-101, which contains the L-shaped mesh `wrist_roll_follower_so101_v1` corresponding to the end effector's fixed finger: 
 
-images of problem
+|  |  |
+| :---: | :---: |
+| <img src="../../media/fixed_finger.png" style="width: 50%; height: auto;"> | <img src="../../media/gripper_convex_collision_geometry.png" style="width: 50%; height: auto;"> |
+| *L-shaped finger mesh* | *Convex collision geometry* |
 
 One solution is to break the L-shaped mesh into two rectangular components. However, it would be better to use the gripper mesh itself as the collision geometry. This can be accomplished by setting the collision geometry to rigid-hydroelastic (see [this tutorial](https://github.com/RobotLocomotion/drake/blob/master/tutorials/hydroelastic_contact_basics.ipynb) for details):
 
-images of solution
+|  |
+| :---: |
+| <img src="../../media/gripper_nonconvex_collision_geometry.png" style="width: 50%; height: auto;"> |
+| *Non-convex collision geometry* |
 
 The file `so101_new_calib_drake.urdf` uses rigid-hydroelastic collision geometry for both of the SO-101's gripper fingers
 
@@ -36,6 +44,6 @@ By default, Drake will not consider reflected motor inertia in dynamics calculat
 
 gif of problem
 
-The solution is to configure the gear ratio and rotor inertia for each actuator. The datasheet for the Feetech STS3215 C001 does not specify rotor inertia, so a value of `2e-6` (used in `so101_new_calib_drake.urdf`) was empirically estimated in Drake based on the SO-101's maximum payload capacity of 400 grams. Feel free to change this value to a more accurate number based on stronger findings or evidence.
+The solution is to configure the gear ratio and rotor inertia for each actuator. The datasheet for the Feetech STS3215 C001 does not specify rotor inertia, so a value of `2e-6` (used in `so101_new_calib_drake.urdf`) was empirically estimated in Drake (feel free to change this value to a more accurate number based on stronger findings or evidence). With reflected inertia accurately modeled, the arm is able to pick up a block weighing 400 grams (the maximum payload capacity of the SO-101):
 
 gif of solution
