@@ -7,7 +7,7 @@ Contributions primarily relate to integration with the SO-101 arm. See [here](mo
 
 ## Installation
 
-Instructions derived from [here](https://manipulation.csail.mit.edu/drake.html#section3)
+Drake instructions derived from [here](https://manipulation.csail.mit.edu/drake.html#section3). Lerobot instructions derived from [here](https://huggingface.co/docs/lerobot/installation)
 
 Tested on Ubuntu 22.04 with Python 3.12
 
@@ -21,6 +21,12 @@ Tested on Ubuntu 22.04 with Python 3.12
 
 4. Install manipulation package \
 `pip install manipulation[all] --extra-index-url https://drake-packages.csail.mit.edu/whl/nightly/`
+
+5. Install lerobot dependencies \
+`sudo apt-get install cmake build-essential python3-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev`
+
+6. Install lerobot package \
+`pip install 'lerobot[all]'`
 
 ## Usage
 
