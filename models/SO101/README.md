@@ -36,8 +36,6 @@ One solution is to break the L-shaped mesh into two rectangular components. Howe
 | <img src="../../media/gripper_nonconvex_collision_geometry.png" style="width: 50%; height: auto;"> |
 | *Non-convex collision geometry* |
 
-The file `so101_new_calib_drake.urdf` uses rigid-hydroelastic collision geometry for both of the SO-101's gripper fingers.
-
 ### Configure Reflected Inertia
 
 By default, Drake will not consider reflected motor inertia in dynamics calculations (see [the documentation](https://drake.mit.edu/doxygen_cxx/classdrake_1_1multibody_1_1_joint_actuator.html#reflected_inertia) for details). This is problematic for the SO-101 follower arm, whose six motors all use 345:1 gear reductions. If reflected inertia is left unmodeled, the arm is barely able to pick up a block weighing 1 gram:
@@ -47,9 +45,35 @@ By default, Drake will not consider reflected motor inertia in dynamics calculat
 | <img src="../../media/no_reflected_inertia_failed_pick.gif" style="width: 50%; height: auto;"> |
 | *Reflected inertia not modeled, fails to pick up 1 gram block* |
 
-The solution is to configure the gear ratio and rotor inertia for each actuator. The datasheet for the Feetech STS3215 C001 does not specify rotor inertia, so a value of `2e-6` (used in `so101_new_calib_drake.urdf`) was empirically estimated in Drake (feel free to change this value to a more accurate number based on stronger findings or evidence). With reflected inertia accurately modeled, the arm is able to pick up a block weighing 400 grams (the maximum payload capacity of the SO-101):
+The solution is to configure the gear ratio and rotor inertia for each actuator. The datasheet for the Feetech STS3215 C001 does not specify rotor inertia, so a value of `2e-6` was empirically estimated in Drake (feel free to change this value to a more accurate number based on stronger evidence). With reflected inertia accurately modeled, the arm is able to pick up a block weighing 400 grams (the maximum payload capacity of the SO-101):
 
 |  |
 | :---: |
 | <img src="../../media/reflected_inertia_successful_pick.gif" style="width: 50%; height: auto;"> |
 | *Reflected inertia modeled, picks up 400 gram block* |
+
+### Improve Joint Limits
+
+The joint limits in the source URDF are only rough approximations. In order to obtain physically-based limits, each joint and its respective links were independently modeled in Drake as follows:
+
+- Actuation was set to zero
+- Reflected inertia was disabled 
+- The plant's `adjacent_bodies_collision_filters` parameter was set to `False`
+- The `obj` triangle meshes were converted to `vtk` tetrahedral meshes (see [this tutorial](https://docs.google.com/document/d/1VZtVsxIjOLKvgQ8SNSrF6PtWuPW5z9PP7-dQuxfmqpc/edit?tab=t.0#heading=h.eqe2ott4g6gl) for details)
+- For every two bodies in collision, at least one had `drake:compliant_hyrdoelastic` collision geometry
+
+This process yielded the following improved joint limits:
+
+| Joint Name | Lower Limit | Upper Limit |
+| --- | --- | --- |
+| shoulder_pan | -2.01012 | 2.15186 |
+| shoulder_lift | -1.82697 | 1.76783 |
+| elbow_flex | -1.81448 | 1.57339 |
+| wrist_flex | -1.81662 | 1.77853 |
+| wrist_roll | -3.14159 | 3.14159 |
+| gripper | -0.19990 | 2.00767 |
+
+|  |  |  |
+| :---: | :---: | :---: |
+| <img src="../../media/gripper_lower_limit.gif"> | <img src="../../media/wrist_flex_upper_limit.gif"> | <img src="../../media/elbow_flex_upper_limit.gif"> |
+| *Gripper Lower Limit* | *Wrist Flex Upper Limit* | *Elbow Flex Upper Limit* |
