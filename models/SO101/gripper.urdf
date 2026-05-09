@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="so101_test">
+
+    <!-- Materials -->
+    <material name="3d_printed">
+        <color rgba="1.0 1.0 1.0 1.0"/>
+    </material>
+    <material name="sts3215">
+        <color rgba="0.1 0.1 0.1 1.0"/>
+    </material>
+
+    <!-- Link gripper -->
+    <link name="gripper_link">
+
+        <inertial>
+            <origin xyz="0.000213627 0.000245138 -0.025187" rpy="0 0 0"/>
+            <mass value="0.087"/>
+            <inertia ixx="2.75087e-05" ixy="-3.35241e-07" ixz="-5.7352e-06" iyy="4.33657e-05" iyz="-5.17847e-08" izz="3.45059e-05"/>
+        </inertial>
+        
+        <!-- Part sts3215_03a_v1_5 -->
+        <visual>
+            <origin xyz="0.0077 0.0001 -0.0234" rpy="-1.5708 -5.19179e-17 -1.66533e-16"/>
+            <geometry>
+                <mesh filename="assets/sts3215_03a_v1_from_stl.obj"/>
+            </geometry>
+            <material name="sts3215"/>
+        </visual>
+        
+        <!-- Part wrist_roll_follower_so101_v1 -->
+        <visual>
+            <origin xyz="8.32667e-17 -0.000218214 0.000949706" rpy="-3.14159 -5.55112e-17 0"/>
+            <geometry>
+                <mesh filename="assets/wrist_roll_follower_so101_v1_from_stl.obj"/>
+            </geometry>
+            <material name="3d_printed"/>
+        </visual>
+        <collision>
+            <origin xyz="8.32667e-17 -0.000218214 0.000949706" rpy="-3.14159 -5.55112e-17 0"/>
+            <geometry>
+                <mesh filename="assets/wrist_roll_follower_so101_v1_from_stl_ftetwild.vtk"/>
+            </geometry>
+            <drake:proximity_properties>
+                <!-- <drake:rigid_hydroelastic/> -->
+                <drake:compliant_hydroelastic/>
+                <drake:hydroelastic_modulus value="1e7"/>
+                <drake:mu_dynamic value="0.5"/>
+            </drake:proximity_properties>
+        </collision>
+
+    </link>
+
+    <!-- Link moving_jaw_so101_v1 -->
+    <link name="moving_jaw_so101_v1_link">
+
+        <inertial>
+            <origin xyz="-0.00157495 -0.0300244 0.0192755" rpy="0 0 0"/>
+            <mass value="0.012"/>
+            <inertia ixx="6.61427e-06" ixy="-3.19807e-07" ixz="-5.90717e-09" iyy="1.89032e-06" iyz="-1.09945e-07" izz="5.28738e-06"/>
+        </inertial>
+        
+        <!-- Part moving_jaw_so101_v1 -->
+        <visual>
+            <origin xyz="-5.55112e-17 -5.55112e-17 0.0189" rpy="9.53145e-17 6.93889e-18 1.24077e-24"/>
+            <geometry>
+                <mesh filename="assets/moving_jaw_so101_v1_from_stl.obj"/>
+            </geometry>
+            <material name="3d_printed"/>
+        </visual>
+        <collision>
+            <origin xyz="-5.55112e-17 -5.55112e-17 0.0189" rpy="9.53145e-17 6.93889e-18 1.24077e-24"/>
+            <geometry>
+                <mesh filename="assets/moving_jaw_so101_v1_from_stl.obj"/>
+            </geometry>
+            <drake:proximity_properties>
+                <drake:rigid_hydroelastic/>
+                <!-- <drake:compliant_hydroelastic/>
+                <drake:hydroelastic_modulus value="1e7"/> -->
+                <drake:mu_dynamic value="0.5"/>
+            </drake:proximity_properties>
+        </collision>
+
+    </link>
+
+    <!-- Joint from gripper to moving_jaw_so101_v1 -->
+    <joint name="gripper" type="revolute">
+        <origin xyz="0.0202 0.0188 -0.0234" rpy="1.5708 -5.24284e-08 -1.41553e-15"/>
+        <parent link="gripper_link"/>
+        <child link="moving_jaw_so101_v1_link"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1.61" velocity="4.39" lower="-3.14" upper="3.14"/>
+    </joint>
+
+    <transmission name="gripper_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="gripper">
+            <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="motor6">
+            <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+            <!-- <drake:gear_ratio value="345.0" /> -->
+            <!-- <drake:rotor_inertia value="0.0001321" /> -->
+        </actuator>
+    </transmission>
+
+</robot>

@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="so101_test">
+
+    <!-- Materials -->
+    <material name="3d_printed">
+        <color rgba="1.0 1.0 1.0 1.0"/>
+    </material>
+    <material name="sts3215">
+        <color rgba="0.1 0.1 0.1 1.0"/>
+    </material>
+
+    <!-- Link shoulder -->
+    <link name="shoulder_link">
+
+        <inertial>
+            <origin xyz="-0.0307604 -1.66727e-05 -0.0252713" rpy="0 0 0"/>
+            <mass value="0.100006"/>
+            <inertia ixx="8.3759e-05" ixy="7.55525e-08" ixz="-1.16342e-06" iyy="8.10403e-05" iyz="1.54663e-07" izz="2.39783e-05"/>
+        </inertial>
+        
+        <!-- Part sts3215_03a_v1_2 -->
+        <visual>
+            <origin xyz="-0.0303992 0.000422241 -0.0417" rpy="1.5708 1.5708 0"/>
+            <geometry>
+                <mesh filename="assets/sts3215_03a_v1_from_stl.obj"/>
+            </geometry>
+            <material name="sts3215"/>
+        </visual>
+        <collision>
+            <origin xyz="-0.0303992 0.000422241 -0.0417" rpy="1.5708 1.5708 0"/>
+            <geometry>
+                <mesh filename="assets/sts3215_03a_v1_from_stl.obj"/>
+            </geometry>
+            <drake:proximity_properties>
+                <drake:rigid_hydroelastic/>
+                <!-- <drake:compliant_hydroelastic/>
+                <drake:hydroelastic_modulus value="1e7"/> -->
+                <drake:mu_dynamic value="0.5"/>
+            </drake:proximity_properties>
+        </collision>
+        
+        <!-- Part motor_holder_so101_base_v1 -->
+        <visual>
+            <origin xyz="-0.0675992 -0.000177759 0.0158499" rpy="1.5708 -1.5708 0"/>
+            <geometry>
+                <mesh filename="assets/motor_holder_so101_base_v1_from_stl.obj"/>
+            </geometry>
+            <material name="3d_printed"/>
+        </visual>
+        <collision>
+            <origin xyz="-0.0675992 -0.000177759 0.0158499" rpy="1.5708 -1.5708 0"/>
+            <geometry>
+                <mesh filename="assets/motor_holder_so101_base_v1_from_stl_ftetwild.vtk"/>
+            </geometry>
+            <drake:proximity_properties>
+                <!-- <drake:rigid_hydroelastic/> -->
+                <drake:compliant_hydroelastic/>
+                <drake:hydroelastic_modulus value="1e7"/>
+                <drake:mu_dynamic value="0.5"/>
+            </drake:proximity_properties>
+        </collision>
+        
+    </link>
+
+    <!-- Link upper_arm -->
+    <link name="upper_arm_link">
+
+        <inertial>
+            <origin xyz="-0.0898471 -0.00838224 0.0184089" rpy="0 0 0"/>
+            <mass value="0.103"/>
+            <inertia ixx="4.08002e-05" ixy="-1.97819e-05" ixz="-4.03016e-08" iyy="0.000147318" iyz="8.97326e-09" izz="0.000142487"/>
+        </inertial>
+        
+        <!-- Part sts3215_03a_v1_3 -->
+        <visual>
+            <origin xyz="-0.11257 -0.0155 0.0187" rpy="-3.14159 -5.27356e-16 -1.5708"/>
+            <geometry>
+                <mesh filename="assets/sts3215_03a_v1_from_stl.obj"/>
+            </geometry>
+            <material name="sts3215"/>
+        </visual>
+       
+        <!-- Part upper_arm_so101_v1 -->
+        <visual>
+            <origin xyz="-0.065085 0.012 0.0182" rpy="3.14159 -0 -1.30911e-30"/>
+            <geometry>
+                <mesh filename="assets/upper_arm_so101_v1_from_stl.obj"/>
+            </geometry>
+            <material name="3d_printed"/>
+        </visual>
+        <collision>
+            <origin xyz="-0.065085 0.012 0.0182" rpy="3.14159 -0 -1.30911e-30"/>
+            <geometry>
+                <mesh filename="assets/upper_arm_so101_v1_from_stl_ftetwild.vtk"/>
+            </geometry>
+            <drake:proximity_properties>
+                <!-- <drake:rigid_hydroelastic/> -->
+                <drake:compliant_hydroelastic/>
+                <drake:hydroelastic_modulus value="1e7"/>
+                <drake:mu_dynamic value="0.5"/>
+            </drake:proximity_properties>
+        </collision>
+
+    </link>
+
+    <!-- Link lower_arm -->
+    <link name="lower_arm_link">
+        
+        <inertial>
+            <origin xyz="-0.0980701 0.00324376 0.0182831" rpy="0 0 0"/>
+            <mass value="0.104"/>
+            <inertia ixx="2.87438e-05" ixy="7.41152e-06" ixz="1.26409e-06" iyy="0.000159844" iyz="-4.90188e-08" izz="0.00014529"/>
+        </inertial>
+        
+        <!-- Part under_arm_so101_v1 -->
+        <visual>
+            <origin xyz="-0.0648499 -0.032 0.0182" rpy="3.14159 -0 6.67202e-31"/>
+            <geometry>
+                <mesh filename="assets/under_arm_so101_v1_from_stl.obj"/>
+            </geometry>
+            <material name="3d_printed"/>
+        </visual>
+        <collision>
+            <origin xyz="-0.0648499 -0.032 0.0182" rpy="3.14159 -0 6.67202e-31"/>
+            <geometry>
+                <mesh filename="assets/under_arm_so101_v1_from_stl_ftetwild.vtk"/>
+            </geometry>
+            <drake:proximity_properties>
+                <!-- <drake:rigid_hydroelastic/> -->
+                <drake:compliant_hydroelastic/>
+                <drake:hydroelastic_modulus value="1e7"/>
+                <drake:mu_dynamic value="0.5"/>
+            </drake:proximity_properties>
+        </collision>
+
+        <!-- Part motor_holder_so101_wrist_v1 -->
+        <visual>
+            <origin xyz="-0.0648499 -0.032 0.018" rpy="-3.14159 -2.55351e-15 -1.83387e-30"/>
+            <geometry>
+                <mesh filename="assets/motor_holder_so101_wrist_v1_from_stl.obj"/>
+            </geometry>
+            <material name="3d_printed"/>
+        </visual>
+        <collision>
+            <origin xyz="-0.0648499 -0.032 0.018" rpy="-3.14159 -2.55351e-15 -1.83387e-30"/>
+            <geometry>
+                <mesh filename="assets/motor_holder_so101_wrist_v1_from_stl.obj"/>
+            </geometry>
+            <drake:proximity_properties>
+                <drake:rigid_hydroelastic/>
+                <!-- <drake:compliant_hydroelastic/>
+                <drake:hydroelastic_modulus value="1e7"/> -->
+                <drake:mu_dynamic value="0.5"/>
+            </drake:proximity_properties>
+        </collision>
+
+    </link>
+
+    <!-- Joint from upper_arm to lower_arm -->
+    <joint name="elbow_flex" type="revolute">
+        <origin xyz="-0.11257 -0.028 1.73763e-16" rpy="-3.63608e-16 8.74301e-16 1.5708"/>
+        <parent link="upper_arm_link"/>
+        <child link="lower_arm_link"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1.61" velocity="4.39" lower="-3.14" upper="3.14"/>
+    </joint>
+
+    <transmission name="elbow_flex_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="elbow_flex">
+            <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="motor3">
+            <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+            <!-- <drake:gear_ratio value="345.0" /> -->
+            <!-- <drake:rotor_inertia value="0.0001321" /> -->
+        </actuator>
+    </transmission>
+
+    <!-- Joint from shoulder to upper_arm -->
+    <joint name="shoulder_lift" type="revolute">
+        <origin xyz="-0.0303992 -0.0182778 -0.0542" rpy="-1.5708 -1.5708 0"/>
+        <parent link="shoulder_link"/>
+        <child link="upper_arm_link"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1.61" velocity="4.39" lower="-3.14" upper="3.14"/>
+    </joint>
+
+    <transmission name="shoulder_lift_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="shoulder_lift">
+            <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="motor2">
+            <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+            <!-- <drake:gear_ratio value="345.0" /> -->
+            <!-- <drake:rotor_inertia value="0.0001321" /> -->
+        </actuator>
+    </transmission>
+
+</robot>

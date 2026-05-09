@@ -54,13 +54,12 @@ The solution is to configure the gear ratio and rotor inertia for each actuator.
 
 ### Improve Joint Limits
 
-The joint limits in the source URDF are only rough approximations. In order to obtain physically-based limits, each joint and its respective links were independently modeled in Drake as follows:
+The joint limits in the source URDF are only rough approximations. In order to obtain physically-based limits, each joint and its respective links was independently modeled in Drake as follows:
 
-- Actuation was set to zero
-- Reflected inertia was disabled 
+- Actuation was set to zero and reflected inertia disabled 
 - The plant's `adjacent_bodies_collision_filters` parameter was set to `False`
 - The `obj` triangle meshes were converted to `vtk` tetrahedral meshes (see [this tutorial](https://docs.google.com/document/d/1VZtVsxIjOLKvgQ8SNSrF6PtWuPW5z9PP7-dQuxfmqpc/edit?tab=t.0#heading=h.eqe2ott4g6gl) for details)
-- For every two bodies in collision, at least one had `drake:compliant_hyrdoelastic` collision geometry
+- Where necessary, at least one of every two bodies in collision had `drake:compliant_hyrdoelastic` collision geometry
 
 This process yielded the following improved joint limits:
 
