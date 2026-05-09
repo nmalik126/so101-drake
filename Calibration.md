@@ -25,7 +25,7 @@ See [`calc_biases.py`](./scripts/calc_biases.py) for an implementation of this a
 
 ## Visualization
 
-The script [`state_publisher.py`](./scripts/state_publisher.py) reads raw encoder values from the SO-101 follower arm at 10Hz, applies the calibration described in [Revised Calibration Method](#revised-calibration-method), and publishes the bias-corrected joint positions to an LCM channel called `SO101_STATUS`.
+The script [`state_publisher.py`](./scripts/state_publisher.py) reads raw encoder values from the SO-101 follower arm at 10Hz, applies the calibration described in [Revised Calibration Procedure](#revised-calibration-procedure), and publishes the bias-corrected joint positions to an LCM channel called `SO101_STATUS`.
 
 The notebook [`state_viewer.ipynb`](./examples/state_viewer.ipynb) establishes an LCM subscriber in Drake on the `SO101_STATUS` channel and sends the results to the `SceneGraph`.
 
