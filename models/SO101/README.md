@@ -36,6 +36,8 @@ One solution is to break the L-shaped mesh into two rectangular components. Howe
 | <img src="../../media/gripper_nonconvex_collision_geometry.png" style="width: 50%; height: auto;"> |
 | *Non-convex collision geometry* |
 
+See [visualizer.ipynb](../../examples/visualizer.ipynb) for the source code
+
 ### Configure Reflected Inertia
 
 By default, Drake will not consider reflected motor inertia in dynamics calculations (see [the documentation](https://drake.mit.edu/doxygen_cxx/classdrake_1_1multibody_1_1_joint_actuator.html#reflected_inertia) for details). This is problematic for the SO-101 follower arm, whose six motors all use 345:1 gear reductions. If reflected inertia is left unmodeled, the arm is barely able to pick up a block weighing 1 gram:
@@ -51,6 +53,8 @@ The solution is to configure the gear ratio and rotor inertia for each actuator.
 | :---: |
 | <img src="../../media/reflected_inertia_successful_pick.gif" style="width: 50%; height: auto;"> |
 | *Reflected inertia modeled, picks up 400 gram block* |
+
+See [diffik_pick.ipynb](../../examples/diffik_pick.ipynb) for source code
 
 ### Improve Joint Limits
 
@@ -76,3 +80,5 @@ This process yielded the following improved joint limits:
 | :---: | :---: | :---: |
 | <img src="../../media/gripper_lower_limit.gif"> | <img src="../../media/wrist_flex_upper_limit.gif"> | <img src="../../media/elbow_flex_upper_limit.gif"> |
 | *Gripper Lower Limit* | *Wrist Flex Upper Limit* | *Elbow Flex Upper Limit* |
+
+See [joint_limits.ipynb](../../examples/joint_limits.ipynb) for source code
