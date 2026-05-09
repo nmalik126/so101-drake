@@ -44,6 +44,8 @@ Installation instructions retrieved from these links:
 
 - Before using the scenarios under `/scenarios`, change the model absolute file paths to your own
 
+- Before running on hardware, follow the revised calibration procedure described in [`/Calibration.md`](./Calibration.md)
+
 ## Repository Index
 
 - `/calibrations` - JSON files and NumPy arrays for motor calibration
