@@ -1,0 +1,6 @@
+package so101;
+
+struct lcmt_so101_configuration
+{
+	double q[6];
+}

@@ -8,8 +8,6 @@ Contributions primarily relate to integration with the SO-101 arm:
 
 ## Installation
 
-Drake instructions derived from [here](https://manipulation.csail.mit.edu/drake.html#section3). Lerobot instructions derived from [here](https://huggingface.co/docs/lerobot/installation)
-
 Tested on Ubuntu 22.04 with Python 3.12
 
 1. Install conda
@@ -29,6 +27,15 @@ Tested on Ubuntu 22.04 with Python 3.12
 6. Install lerobot package \
 `pip install 'lerobot[all]'`
 
+7. Install lcm \
+`pip install lcm`
+
+Installation instructions retrieved from these links:
+
+- [Drake](https://manipulation.csail.mit.edu/drake.html#section3)
+- [Lerobot](https://huggingface.co/docs/lerobot/installation)
+- [LCM](https://lcm-proj.github.io/lcm/content/install-instructions.html#installing-lcm)
+
 ## Usage
 
 Use the conda environment created in [Installation](#installation) as the Python kernel for Jupyter notebooks under `/examples`
@@ -37,7 +44,10 @@ Before using the scenarios under `/scenarios`, change the model absolute file pa
 
 ## Repository Index
 
-- `/examples` - Jupyter notebooks demonstrating example tasks with the SO-101 in Drake
-- `/media` - Images and GIFs used in READMEs
+- `/calibrations` - JSON files and NumPy arrays for motor calibration
+- `/examples` - Jupyter notebooks for example tasks with the SO-101 in Drake
+- `/lcmdefs` - LCM messages for hardware <-> Drake communications
+- `/media` - Images and GIFs for READMEs
 - `/models` - SDFs and URDFs for robot and objects
 - `/scenarios` - YAMLs for Drake scenarios
+- `/scripts` - Helper functions for interfacing with hardware 
