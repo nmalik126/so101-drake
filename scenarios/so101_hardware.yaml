@@ -19,3 +19,6 @@ directives:
 
 lcm_buses:
     so101_lcm: {}
+
+plant_config:
+    time_step: 1e-3

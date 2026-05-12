@@ -33,6 +33,3 @@ model_drivers:
 
 plant_config:
     time_step: 1e-2
-    # contact_model: hydroelastic
-    # contact_surface_representation: triangle
-    # discrete_contact_approximation: similar
