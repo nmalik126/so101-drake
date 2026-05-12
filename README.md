@@ -7,6 +7,7 @@ Contributions primarily relate to integration with the SO-101 arm:
 - See [`/examples`](./examples/) for implementations of various manipulation tasks with the SO-101 in Drake
 - See [`/docs/URDF.md`](./docs/URDF.md) for an improved SO-101 URDF optimized for Drake
 - See [`/docs/Calibration.md`](./docs/Calibration.md) for an improved SO-101 motor calibration procedure
+- See [`/docs/Hardware.md`](/docs/Hardware.md) for using Drake to visualize and control the SO-101 hardware
 
 ## Installation
 
