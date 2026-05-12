@@ -10,7 +10,7 @@ If the biases are left uncorrected, the SO-101 gripper's true position may end u
 
 The official LeRobot calibration procedure has the user move each joint to the limits of its range, where the raw encoder values are recorded. When the robot is next activated, the raw encoder values are "normalized" using the midpoint of the recorded joint limits. This strategy is valid if every joint's range is symmetrical, i.e. `abs(lower_limit) ~= abs(upper_limit)`.
 
-However, the SO-101 has enough asymmetry in its joint ranges to render the above approach inaccurate. A better approach would be to take the recorded joint limits and register them against the real joint limits obtained from the robot's physical model. Unfortunately, the joint limits provided in the default SO-101 URDF appear to be just rough "eyeball" approximations. However, more accurate joint limits can be obtained through careful physics simulations using the provided body meshes: see [here](./models/SO101/README.md#improve-joint-limits) for details. 
+However, the SO-101 has enough asymmetry in its joint ranges to render the above approach inaccurate. A better approach would be to take the recorded joint limits and register them against the real joint limits obtained from the robot's physical model. Unfortunately, the joint limits provided in the default SO-101 URDF appear to be just rough "eyeball" approximations. However, more accurate joint limits can be obtained through careful physics simulations using the provided body meshes: see [here](../models/SO101/README.md#improve-joint-limits) for details. 
 
 After accurate ground-truth joint limits have been obtained, optimal motor biases can be calculated using the following formula:
 
@@ -21,17 +21,17 @@ $U_{meas}$ : Measured upper limit (from calibration)
 
 $$Bias = \frac{(L_{true} - L_{meas}) + (U_{true} - U_{meas})}{2}$$
 
-See [`calc_biases.py`](./scripts/calc_biases.py) for an implementation of this algorithm for the SO-101.
+See [`calc_biases.py`](../scripts/calc_biases.py) for an implementation of this algorithm for the SO-101.
 
 ## Visualization
 
-The script [`state_publisher.py`](./scripts/state_publisher.py) reads raw encoder values from the SO-101 follower arm at 10Hz, applies the calibration described in [Revised Calibration Procedure](#revised-calibration-procedure), and publishes the bias-corrected joint positions to an LCM channel called `SO101_STATUS`.
+The script [`state_publisher.py`](../scripts/state_publisher.py) reads raw encoder values from the SO-101 follower arm at 10Hz, applies the calibration described in [Revised Calibration Procedure](#revised-calibration-procedure), and publishes the bias-corrected joint positions to an LCM channel called `SO101_STATUS`.
 
-The notebook [`state_viewer.ipynb`](./examples/state_viewer.ipynb) establishes an LCM subscriber in Drake on the `SO101_STATUS` channel and sends the results to the `SceneGraph`.
+The notebook [`state_viewer.ipynb`](../examples/state_viewer.ipynb) establishes an LCM subscriber in Drake on the `SO101_STATUS` channel and sends the results to the `SceneGraph`.
 
 When the two scripts above are run simultaneously, the arm's current configuration can be visualized in meshcat. As seen below, the revised calibration method improves end-effector positioning accuracy by up to an order of magnitude:
 
 |  |  |
 | :---: | :---: |
-| <img src="media/lerobot_calib.png"> | <img src="media/revised_calib.png"> |
+| <img src="../media/lerobot_calib.png"> | <img src="../media/revised_calib.png"> |
 | *LeRobot calibration - gripper penetrates table by ~2cm* | *Revised calibration - gripper penetrates table by ~2mm* |

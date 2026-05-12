@@ -5,8 +5,8 @@ Most examples derived from [drake tutorials](https://github.com/RobotLocomotion/
 
 Contributions primarily relate to integration with the SO-101 arm:
 - See [`/examples`](./examples/) for implementations of various manipulation tasks with the SO-101 in Drake
-- See [`/models/SO101/README.md`](models/SO101/README.md) for an improved SO-101 URDF optimized for Drake
-- See [`/Calibration.md`](Calibration.md) for an improved SO-101 motor calibration procedure
+- See [`/docs/URDF.md`](./docs/URDF.md) for an improved SO-101 URDF optimized for Drake
+- See [`/docs/Calibration.md`](./docs/Calibration.md) for an improved SO-101 motor calibration procedure
 
 ## Installation
 
@@ -44,11 +44,12 @@ Installation instructions retrieved from these links:
 
 - Before using the scenarios under `/scenarios`, change the model absolute file paths to your own
 
-- Before running on hardware, follow the revised calibration procedure described in [`/Calibration.md`](./Calibration.md)
+- Before running on hardware, follow the revised calibration procedure described in [`/docs/Calibration.md`](./docs/Calibration.md)
 
 ## Repository Index
 
 - `/calibrations` - JSON files and NumPy arrays for motor calibration
+- `/docs` - Writeups for core tasks and findings
 - `/examples` - Jupyter notebooks for example tasks with the SO-101 in Drake
 - `/lcmdefs` - LCM messages for hardware <-> Drake communications
 - `/media` - Images and GIFs for READMEs
