@@ -30,8 +30,11 @@ Tested on Ubuntu 22.04 with Python 3.12
 6. Install lerobot package \
 `pip install 'lerobot[all]'`
 
-7. Install lcm \
+7. Install lcm package \
 `pip install lcm`
+
+8. Install open3d package \
+`pip install open3d`
 
 Installation instructions retrieved from these links:
 
