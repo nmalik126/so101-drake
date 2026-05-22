@@ -1,0 +1,36 @@
+directives:
+
+- add_model:
+    name: mat
+    file: file:///home/noor/so101-drake/models/objects/mat.sdf
+- add_weld:
+    parent: world
+    child: mat::mat_link
+
+- add_model:
+    name: so101
+    file: file:///home/noor/so101-drake/models/SO101/so101_new_calib_drake.urdf
+    default_joint_positions:
+        shoulder_pan: [0]
+        shoulder_lift: [-1.822]
+        elbow_flex: [1.55]
+        wrist_flex: [0.906]
+        wrist_roll: [0]
+        gripper: [0]
+- add_weld:
+    parent: mat::mat_link
+    child: so101::base_link
+    X_PC:
+        translation: [0, -0.1775, 0.0074]
+        rotation: !Rpy { deg: [0, 0, 90] }
+
+- add_model:
+    name: box
+    file: file:///home/noor/so101-drake/models/objects/box.sdf
+
+- add_weld:
+    parent: mat::mat_link
+    child: box::box_link
+    X_PC:
+        translation: [-0.075, 0.025, 0.02]
+        rotation: !Rpy { deg: [0, 0, 90] }
