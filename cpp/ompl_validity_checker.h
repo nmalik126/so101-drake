@@ -5,6 +5,7 @@
 #include <drake/planning/robot_diagram.h>
 #include <drake/planning/scene_graph_collision_checker.h>
 #include <drake/planning/collision_checker_context.h>
+#include <drake/multibody/tree/multibody_tree_indexes.h>
 
 #include <ompl/base/StateValidityChecker.h>
 #include <ompl/base/State.h>
@@ -16,6 +17,7 @@
 using drake::planning::RobotDiagram;
 using drake::planning::SceneGraphCollisionChecker;
 using drake::planning::CollisionCheckerContext;
+using drake::multibody::BodyIndex;
 
 namespace ob = ompl::base;
 
@@ -33,10 +35,10 @@ public:
     double clearance(const ob::State *state) const override;
 
 private:
-    Eigen::VectorXd state_to_vector_(const ob::State *state) const;
-
     std::unique_ptr<SceneGraphCollisionChecker> checker_;
     std::shared_ptr<CollisionCheckerContext> context_;
-    const double influence_distance_ {};
+    const BodyIndex gripper_link_index_;
+    const BodyIndex moving_jaw_index_;
+    const double influence_distance_;
     static constexpr int num_q_ { constants::SO101_NUM_Q };
 };

@@ -1,6 +1,7 @@
 #include "helpers.h"
 #include "constants.h"
 #include "ompl_validity_checker.h"
+#include "ompl_helpers.h"
 
 #include <drake/planning/robot_diagram_builder.h>
 #include <drake/geometry/meshcat.h>
@@ -23,6 +24,7 @@
 #include <iostream>
 #include <memory>
 #include <limits>
+#include <vector>
 
 using drake::planning::RobotDiagramBuilder;
 using drake::geometry::Meshcat;
@@ -132,13 +134,42 @@ int main() {
     // solve planning problem
     std::cout << "solving planning problem..." << '\n';
     ob::PlannerStatus solved { planner->solve(1.0) };
-    if (solved) {
-        std::cout << "planning success, result:" << '\n';
-        std::static_pointer_cast<og::PathGeometric>(pdef->getSolutionPath())->printAsMatrix(std::cout);
-    }
-    else {
+    if (!solved) {
         std::cout << "planning failure." << '\n';
+        return 1;
     }
+    std::cout << "planning success, result:" << '\n';
+    auto* path { pdef->getSolutionPath()->as<og::PathGeometric>() };
+    path->printAsMatrix(std::cout);
+
+    // prune path
+    std::cout << "num points original: " << path->getStateCount() << '\n';
+    path->interpolate(path->getStateCount() * 4);
+    std::cout << "num points after interpolation: " << path->getStateCount() << '\n';
+    constexpr double low_clearance { 1e-2 };
+    std::vector<Eigen::VectorXd> waypoints {
+        helpers::state_to_vector(path->getState(0))
+    };
+    int num_waypoints { 1 };
+    for (int i { 1 }; i < path->getStateCount() - 1; ++i) {
+        auto s { path->getState(i) };
+        bool valid { si->getStateValidityChecker()->isValid(s) };
+        double clearance { si->getStateValidityChecker()->clearance(s) };
+        if (valid && (clearance < low_clearance)) {
+            waypoints.push_back(helpers::state_to_vector(s));
+            ++num_waypoints;
+        }
+    }
+    waypoints.push_back(
+        helpers::state_to_vector(path->getState(path->getStateCount() - 1))
+    );
+    ++num_waypoints;
+    std::cout << "num points after pruning: " << num_waypoints << '\n';
+    Eigen::MatrixXd waypoints_mat(constants::SO101_NUM_Q, num_waypoints);
+    for (int i { 0 }; i < num_waypoints; ++i) {
+        waypoints_mat.col(i) = waypoints[i];
+    }
+    std::cout << waypoints_mat.transpose() << '\n';
 
     return 0;
 }

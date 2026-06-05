@@ -6,6 +6,8 @@
 #include <drake/geometry/scene_graph.h>
 #include <drake/multibody/parsing/parser.h>
 
+#include <Eigen/Dense>
+
 #include <iostream>
 
 using drake::multibody::MultibodyPlant;
