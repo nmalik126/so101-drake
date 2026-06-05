@@ -8,6 +8,7 @@
 #include <drake/geometry/meshcat_visualizer.h>
 #include <drake/geometry/meshcat_visualizer_params.h>
 #include <drake/planning/robot_diagram.h>
+#include <drake/common/trajectories/piecewise_polynomial.h>
 
 #include <ompl/base/spaces/RealVectorBounds.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
@@ -30,7 +31,7 @@ using drake::planning::RobotDiagramBuilder;
 using drake::geometry::Meshcat;
 using drake::geometry::MeshcatVisualizer;
 using drake::geometry::MeshcatVisualizerParams;
-using drake::planning::RobotDiagram;
+using drake::trajectories::PiecewisePolynomial;
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -131,45 +132,81 @@ int main() {
     planner->setup();
     std::cout << "planner created." << '\n';
 
-    // solve planning problem
-    std::cout << "solving planning problem..." << '\n';
-    ob::PlannerStatus solved { planner->solve(1.0) };
-    if (!solved) {
-        std::cout << "planning failure." << '\n';
-        return 1;
-    }
-    std::cout << "planning success, result:" << '\n';
-    auto* path { pdef->getSolutionPath()->as<og::PathGeometric>() };
-    path->printAsMatrix(std::cout);
-
-    // prune path
-    std::cout << "num points original: " << path->getStateCount() << '\n';
-    path->interpolate(path->getStateCount() * 4);
-    std::cout << "num points after interpolation: " << path->getStateCount() << '\n';
-    constexpr double low_clearance { 1e-2 };
-    std::vector<Eigen::VectorXd> waypoints {
-        helpers::state_to_vector(path->getState(0))
-    };
-    int num_waypoints { 1 };
-    for (int i { 1 }; i < path->getStateCount() - 1; ++i) {
-        auto s { path->getState(i) };
-        bool valid { si->getStateValidityChecker()->isValid(s) };
-        double clearance { si->getStateValidityChecker()->clearance(s) };
-        if (valid && (clearance < low_clearance)) {
-            waypoints.push_back(helpers::state_to_vector(s));
-            ++num_waypoints;
+    constexpr int max_iters = { 10 };
+    constexpr int min_waypoints { 6 };
+    constexpr int max_waypoints { 10 };
+    Eigen::MatrixXd waypoints_mat {};
+    int num_waypoints {};
+    bool waypoints_found { false };
+    for (int iters { 0 }; iters < max_iters; ++iters) {
+        std::cout << "iteration: " << iters << '\n';
+        // clear previous data
+        planner->clear();
+        pdef->clearSolutionPaths();
+        
+        // solve planning problem
+        std::cout << "solving planning problem..." << '\n';
+        ob::PlannerStatus solved { planner->solve(1.0) };
+        std::cout << "planner status: " << solved.asString() << '\n';
+        std::cout << "success: " << (solved==ob::PlannerStatus::EXACT_SOLUTION ? "y" : "n") << '\n';
+        if (!solved) {
+            std::cout << "planning failure." << '\n';
+            // return 1;
+            continue;
+        }
+        auto* path { pdef->getSolutionPath()->as<og::PathGeometric>() };
+        std::cout << "planning success, result:" << '\n';
+        // path->printAsMatrix(std::cout);
+        
+        // prune path
+        std::cout << "num points original: " << path->getStateCount() << '\n';
+        // path->interpolate(path->getStateCount() * 4);
+        path->subdivide();
+        std::cout << "num points after interpolation: " << path->getStateCount() << '\n';
+        constexpr double low_clearance { 1e-2 };
+        std::vector<Eigen::VectorXd> waypoints {
+            helpers::state_to_vector(path->getState(0))
+        };
+        num_waypoints = 1;
+        for (int i { 1 }; i < path->getStateCount() - 1; ++i) {
+            auto s { path->getState(i) };
+            bool valid { si->getStateValidityChecker()->isValid(s) };
+            double clearance { si->getStateValidityChecker()->clearance(s) };
+            if (valid && (clearance < low_clearance)) {
+                waypoints.push_back(helpers::state_to_vector(s));
+                ++num_waypoints;
+            }
+        }
+        waypoints.push_back(
+            helpers::state_to_vector(path->getState(path->getStateCount() - 1))
+        );
+        ++num_waypoints;
+        std::cout << "num points after pruning: " << num_waypoints << '\n';
+        if ((num_waypoints >= min_waypoints) && (num_waypoints <= max_waypoints)) {
+            waypoints_mat = Eigen::MatrixXd { constants::SO101_NUM_Q, num_waypoints };
+            for (int i { 0 }; i < num_waypoints; ++i) {
+                waypoints_mat.col(i) = waypoints[i];
+            }
+            waypoints_found = true;
+            // path->printAsMatrix(std::cout);
+            break;
         }
     }
-    waypoints.push_back(
-        helpers::state_to_vector(path->getState(path->getStateCount() - 1))
-    );
-    ++num_waypoints;
-    std::cout << "num points after pruning: " << num_waypoints << '\n';
-    Eigen::MatrixXd waypoints_mat(constants::SO101_NUM_Q, num_waypoints);
-    for (int i { 0 }; i < num_waypoints; ++i) {
-        waypoints_mat.col(i) = waypoints[i];
+    
+    if (!waypoints_found) {
+        std::cout << "valid waypoints not found" << '\n';
+        return 1;
     }
+    
     std::cout << waypoints_mat.transpose() << '\n';
+    helpers::save_matrix(waypoints_mat, "waypoints.bin");
+
+    // publish position trajectory
+    Eigen::VectorXd times = Eigen::VectorXd::LinSpaced(num_waypoints, 0.0, 5.0);
+    // std::cout << times << '\n';
+    PiecewisePolynomial ompl_traj { PiecewisePolynomial<double>::FirstOrderHold(times, waypoints_mat) };
+    helpers::publish_position_trajectory(ompl_traj, *context, plant, visualizer);
+    helpers::user_input_quit();
 
     return 0;
 }

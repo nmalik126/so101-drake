@@ -8,6 +8,9 @@ find_package(drake CONFIG REQUIRED)
 # find_package(ompl REQUIRED COMPONENTS base)
 find_package(ompl REQUIRED)
 
+message(STATUS "OMPL version: ${OMPL_VERSION}")
+message(STATUS "OMPL include dirs: ${OMPL_INCLUDE_DIRS}")
+
 add_executable(visualizer visualizer.cpp)
 target_link_libraries(visualizer drake::drake)
 
