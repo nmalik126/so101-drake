@@ -12,6 +12,7 @@
 #include <Eigen/Dense>
 
 #include <iostream>
+#include <memory>
 #include <limits>
 #include <numbers>
 

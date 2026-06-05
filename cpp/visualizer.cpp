@@ -8,6 +8,7 @@
 #include <Eigen/Dense>
 
 #include <iostream>
+#include <memory>
 
 using drake::systems::DiagramBuilder;
 using drake::multibody::AddMultibodyPlantSceneGraph;
