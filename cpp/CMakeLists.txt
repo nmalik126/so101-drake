@@ -35,3 +35,16 @@ target_link_libraries(classic_motion_planning PRIVATE
     drake::drake
     ${OMPL_LIBRARIES}
 )
+
+add_executable(simulation
+    simulation.cpp
+    inverse_kinematics.cpp
+    ompl_planning.cpp
+    ompl_validity_checker.cpp
+    trajectory_optimization.cpp
+)
+target_include_directories(simulation PRIVATE ${OMPL_INCLUDE_DIRS})
+target_link_libraries(simulation PRIVATE
+    drake::drake
+    ${OMPL_LIBRARIES}
+)
