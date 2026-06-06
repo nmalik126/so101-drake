@@ -8,11 +8,15 @@
 #include <drake/common/trajectories/trajectory.h>
 #include <drake/systems/framework/context.h>
 #include <drake/geometry/meshcat_visualizer.h>
+#include <drake/planning/robot_diagram_builder.h>
+#include <drake/geometry/meshcat.h>
+#include <drake/geometry/meshcat_visualizer.h>
 
 #include <Eigen/Dense>
 
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 using drake::multibody::MultibodyPlant;
 using drake::geometry::SceneGraph;
@@ -22,6 +26,9 @@ using drake::math::RollPitchYaw;
 using drake::trajectories::Trajectory;
 using drake::systems::Context;
 using drake::geometry::MeshcatVisualizerd;
+using drake::planning::RobotDiagramBuilder;
+using drake::geometry::Meshcat;
+using drake::geometry::MeshcatVisualizer;
 
 namespace helpers {
 

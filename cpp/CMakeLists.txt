@@ -22,3 +22,16 @@ target_link_libraries(ompl_test PRIVATE drake::drake ${OMPL_LIBRARIES})
 
 add_executable(trajopt_test trajopt_test.cpp)
 target_link_libraries(trajopt_test drake::drake)
+
+add_executable(classic_motion_planning 
+    classic_motion_planning.cpp
+    inverse_kinematics.cpp
+    ompl_planning.cpp
+    ompl_validity_checker.cpp
+    trajectory_optimization.cpp
+)
+target_include_directories(classic_motion_planning PRIVATE ${OMPL_INCLUDE_DIRS})
+target_link_libraries(classic_motion_planning PRIVATE
+    drake::drake
+    ${OMPL_LIBRARIES}
+)

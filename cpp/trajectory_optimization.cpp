@@ -1,12 +1,12 @@
-#include "helpers.h"
+#include "trajectory_optimization.h"
+
 #include "constants.h"
 
-#include <drake/planning/robot_diagram_builder.h>
-#include <drake/geometry/meshcat.h>
-#include <drake/geometry/meshcat_visualizer.h>
+#include <drake/common/trajectories/bspline_trajectory.h>
+#include <drake/multibody/plant/multibody_plant.h>
+#include <drake/planning/robot_diagram.h>
 #include <drake/math/bspline_basis.h>
 #include <drake/math/matrix_util.h>
-#include <drake/common/trajectories/bspline_trajectory.h>
 #include <drake/planning/trajectory_optimization/kinematic_trajectory_optimization.h>
 #include <drake/planning/collision_checker_params.h>
 #include <drake/planning/scene_graph_collision_checker.h>
@@ -16,16 +16,13 @@
 
 #include <Eigen/Dense>
 
-#include <iostream>
-#include <vector>
-#include <memory>
+#include <optional>
 
-using drake::planning::RobotDiagramBuilder;
-using drake::geometry::Meshcat;
-using drake::geometry::MeshcatVisualizer;
+using drake::trajectories::BsplineTrajectory;
+using drake::multibody::MultibodyPlant;
+using drake::planning::RobotDiagram;
 using drake::math::BsplineBasis;
 using drake::math::EigenToStdVector;
-using drake::trajectories::BsplineTrajectory;
 using drake::planning::trajectory_optimization::KinematicTrajectoryOptimization;
 using drake::planning::CollisionCheckerParams;
 using drake::planning::SceneGraphCollisionChecker;
@@ -33,34 +30,16 @@ using drake::multibody::MinimumDistanceLowerBoundConstraint;
 using drake::solvers::MinimumValuePenaltyFunction;
 using drake::solvers::Solve;
 
-int main() {
-    std::cout << "TrajOpt Test" << '\n';
+namespace motion_planning {
+namespace trajectory_optimization {
 
-    // read waypoints
-    const Eigen::MatrixXd waypoints { helpers::load_matrix("waypoints.bin") };
+std::optional<BsplineTrajectory<double>> GenerateTrajectory(
+    const MultibodyPlant<double>& plant,
+    std::shared_ptr<RobotDiagram<double>> diagram,
+    const Eigen::MatrixXd waypoints
+) {
+    // get n_waypoints
     const int n_waypoints { static_cast<int>(waypoints.cols()) };
-    std::cout << waypoints.transpose() << '\n';
-
-    // init diagram
-    RobotDiagramBuilder<double> builder {};
-    auto& plant { builder.plant() };
-    auto& scene_graph { builder.scene_graph() };
-    auto& parser { builder.parser() };
-
-    // init scenario
-    std::cout << "parsing started..." << '\n';
-    helpers::generate_so101_brick_welded(plant, scene_graph, parser);
-    std::cout << "parsing finished." << '\n';
-
-    // meshcat
-    auto meshcat { std::make_shared<Meshcat>() };
-    auto& visualizer { MeshcatVisualizer<double>::AddToBuilder(&(builder.builder()), scene_graph, meshcat) };
-
-    // create context
-    std::shared_ptr diagram { builder.Build() };
-    auto context { diagram->CreateDefaultContext() };
-    const auto& fixed_plant_context { plant.GetMyContextFromRoot(*context) };
-    auto& mutable_plant_context { plant.GetMyMutableContextFromRoot(context.get()) };
 
     // init trajopt
     BsplineBasis<double> basis { 4, n_waypoints };
@@ -69,7 +48,6 @@ int main() {
     trajopt.SetInitialGuess(init_traj);
 
     // add kinematic constraints
-    std::cout << "configuring trajopt..." << '\n';
     trajopt.AddPositionBounds(
         plant.GetPositionLowerLimits(),
         plant.GetPositionUpperLimits()
@@ -116,21 +94,15 @@ int main() {
     };
     for (const auto s : Eigen::VectorXd::LinSpaced(25, 0.0, 1.0))
         trajopt.AddPathPositionConstraint(collision_constraint, s);
-    std::cout << "trajopt configured." << '\n';
 
     // solve trajopt
-    std::cout << "solving trajopt..." << '\n';
     auto& prog { trajopt.get_mutable_prog() };
     auto result { Solve(prog) };
-    std::cout 
-        << "trajopt result: "
-        << (result.is_success() ? "success" : "failure") 
-        << '\n';
-
-    // visualize trajectory
-    auto trajectory { trajopt.ReconstructTrajectory(result) };
-    helpers::publish_position_trajectory(trajectory, *context, plant, visualizer);
-    helpers::user_input_quit();
-
-    return 0;
+    if (result.is_success())
+        return trajopt.ReconstructTrajectory(result);
+    else
+        return std::nullopt;
 }
+
+} // namespace trajectory_optimization
+} // namespace motion_planning
