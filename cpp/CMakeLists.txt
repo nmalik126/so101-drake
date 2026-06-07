@@ -48,3 +48,9 @@ target_link_libraries(simulation PRIVATE
     drake::drake
     ${OMPL_LIBRARIES}
 )
+
+add_executable(hardware_test 
+    hardware_test.cpp
+    so101_lcm.cpp
+)
+target_link_libraries(hardware_test drake::drake)
