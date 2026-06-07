@@ -4,6 +4,7 @@
 #include <drake/geometry/meshcat.h>
 #include <drake/geometry/meshcat_visualizer.h>
 #include <drake/systems/analysis/simulator.h>
+#include <drake/geometry/meshcat_visualizer_params.h>
 
 #include <Eigen/Dense>
 
@@ -16,6 +17,7 @@ using drake::multibody::Parser;
 using drake::geometry::Meshcat;
 using drake::geometry::MeshcatVisualizer;
 using drake::systems::Simulator;
+using drake::geometry::MeshcatVisualizerParams;
 
 int main() {
     std::cout << "begin program" << '\n';
@@ -30,7 +32,8 @@ int main() {
 
     // parser
     Parser parser{ &plant, &scene_graph };
-    std::string model_path = "/home/noor/SO-ARM100/Simulation/SO101/so101_new_calib_urdf_drake_hydro.urdf";
+    // std::string model_path = "/home/noor/SO-ARM100/Simulation/SO101/so101_new_calib_urdf_drake_hydro.urdf";
+    std::string model_path = "/home/noor/SO-ARM100/Simulation/SO101/so101_object.urdf";
     std::cout << "parsing started..." << '\n';
     auto so101 = parser.AddModels(model_path)[0];
     std::cout << "parsing finished." << '\n';
@@ -43,7 +46,29 @@ int main() {
 
     // meshcat
     auto meshcat{ std::make_shared<Meshcat>() };
-    MeshcatVisualizer<double>::AddToBuilder(&builder, scene_graph, meshcat);
+    // MeshcatVisualizer<double>::AddToBuilder(&builder, scene_graph, meshcat);
+    auto& visualizer {
+        MeshcatVisualizer<double>::AddToBuilder(
+            &builder,
+            scene_graph,
+            meshcat,
+            MeshcatVisualizerParams {
+                .role { drake::geometry::Role::kIllustration }
+            }
+        )
+    };
+    auto& collision_visualizer {
+        MeshcatVisualizer<double>::AddToBuilder(
+            &builder,
+            scene_graph,
+            meshcat,
+            MeshcatVisualizerParams {
+                .role { drake::geometry::Role::kProximity },
+                .prefix { "collision" },
+                .visible_by_default { false }
+            }
+        )
+    };
 
     // build
     auto diagram{ builder.Build() };

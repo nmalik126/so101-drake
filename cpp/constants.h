@@ -10,8 +10,11 @@ namespace constants {
     namespace model_paths {
 
         inline constexpr std::string_view SO101 { "/home/noor/SO-ARM100/Simulation/SO101/so101_new_calib_urdf_drake_hydro.urdf" };
+        inline constexpr std::string_view SO101_OBJ { "/home/noor/SO-ARM100/Simulation/SO101/so101_object.urdf" };
         inline constexpr std::string_view MAT { "/home/noor/SO-ARM100/Simulation/assets/mat.sdf" };
         inline constexpr std::string_view BOX { "/home/noor/SO-ARM100/Simulation/assets/box.sdf" };
+        inline constexpr std::string_view BIN { "/home/noor/SO-ARM100/Simulation/assets/bin_small.sdf" };
+        inline constexpr std::string_view BIN_CLR { "/home/noor/SO-ARM100/Simulation/assets/bin_small_clearance.sdf" };
 
     } // namespace model_paths
 
@@ -30,6 +33,21 @@ namespace constants {
             inline constexpr double R[3] { 0, 0, pi/2 };
 
         } // namespace X_MAT_BOX
+
+        namespace X_MAT_BOXGOAL {
+
+            // inline constexpr double T[3] { 0.075, 0.025, 0.02 };
+            inline constexpr double T[3] { 0.1, 0, 0.02 };
+            inline constexpr double R[3] { 0, 0, -pi/2 };
+
+        } // namespace X_MAT_BOXGOAL
+
+        namespace X_MAT_BIN {
+
+            inline constexpr double T[3] { 0.1, 0, 0.006 };
+            inline constexpr double R[3] { 0, 0, 0 };
+
+        } // namespace X_MAT_BIN
 
     } // namespace transforms
 

@@ -19,6 +19,8 @@
 #include <optional>
 
 using motion_planning::ComputeGraspPlan;
+using motion_planning::ComputePlacePlan;
+using motion_planning::ComputeRestPlan;
 
 using drake::planning::RobotDiagramBuilder;
 using drake::geometry::Meshcat;
@@ -47,7 +49,9 @@ int main() {
 
     // init meshcat
     auto meshcat { std::make_shared<Meshcat>() };
-    MeshcatVisualizer<double>::AddToBuilder(&diagram_builder, scene_graph, meshcat);
+    auto& visualizer { MeshcatVisualizer<double>::AddToBuilder(
+        &diagram_builder, scene_graph, meshcat
+    ) };
 
     // compute grasp plan
     std::cout << "computing grasp plan..." << '\n';
@@ -58,23 +62,58 @@ int main() {
     }
     std::cout << "grasp plan computed." << '\n';
 
-    // append gripper trajectory
+    // compute place plan
     const auto grasp_trajectory { grasp_plan_result.value() };
     const Eigen::VectorXd q_grasp_open { grasp_trajectory.FinalValue() };
     Eigen::VectorXd q_grasp_closed { q_grasp_open };
     q_grasp_closed(constants::SO101_NUM_Q - 1) = -0.1;
-    const double grasp_traj_end_time { grasp_trajectory.end_time() };
-    const auto gripper_trajectory {
+    std::cout << "computing place plan..." << '\n';
+    const auto place_plan_result { ComputePlacePlan(q_grasp_closed) };
+    if (!place_plan_result) {
+        std::cout << "Place Plan Failure. Exiting..." << '\n';
+        return 1;
+    }
+    std::cout << "place plan computed." << '\n';
+
+    // compute rest plan
+    const auto place_trajectory { place_plan_result.value() };
+    const Eigen::VectorXd q_place_closed { place_trajectory.FinalValue() };
+    Eigen::VectorXd q_place_open { q_place_closed };
+    q_place_open(constants::SO101_NUM_Q - 1) = 0.5;
+    std::cout << "computing rest plan..." << '\n';
+    const auto rest_plan_result { ComputeRestPlan(q_place_open) };
+    if (!rest_plan_result) {
+        std::cout << "Rest Plan Failure. Exiting..." << '\n';
+        return 1;
+    }
+    std::cout << "rest plan computed." << '\n';
+
+    // /*
+    // concat trajectories
+    const auto gripper_close_trajectory {
         PiecewisePolynomial<double>::FirstOrderHold(
-            { grasp_traj_end_time, grasp_traj_end_time + 1.0 },
+            { 0.0, 1.0 },
             { q_grasp_open, q_grasp_closed }
         )
     };
-    const CompositeTrajectory<double> trajectory { { 
-        drake::copyable_unique_ptr<Trajectory<double>> { grasp_trajectory }, 
-        drake::copyable_unique_ptr<Trajectory<double>> { gripper_trajectory } 
-    } };
-
+    const auto gripper_open_trajectory {
+        PiecewisePolynomial<double>::FirstOrderHold(
+            { 0.0, 1.0 },
+            { q_place_closed, q_place_open }
+        )
+    };
+    const auto rest_trajectory { rest_plan_result.value() };
+    const auto trajectory {
+        CompositeTrajectory<double>::AlignAndConcatenate({
+            drake::copyable_unique_ptr<Trajectory<double>> { grasp_trajectory }, 
+            drake::copyable_unique_ptr<Trajectory<double>> { gripper_close_trajectory },
+            drake::copyable_unique_ptr<Trajectory<double>> { place_trajectory }, 
+            drake::copyable_unique_ptr<Trajectory<double>> { gripper_open_trajectory },
+            drake::copyable_unique_ptr<Trajectory<double>> { rest_trajectory }
+        })
+    };
+    
+    // /*
     // add trajectory source to diagram
     auto q_source {
         diagram_builder.AddSystem<TrajectorySource>(trajectory)
@@ -105,10 +144,11 @@ int main() {
     Simulator<double> simulator { *diagram };
     simulator.set_target_realtime_rate(1.0);
     meshcat->StartRecording();
-    simulator.AdvanceTo(5.0);
+    simulator.AdvanceTo(trajectory.end_time());
     meshcat->StopRecording();
     meshcat->PublishRecording();
     helpers::user_input_quit();
+    // */
     
     return 0;
 }

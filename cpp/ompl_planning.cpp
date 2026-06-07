@@ -30,17 +30,14 @@ namespace og = ompl::geometric;
 
 namespace motion_planning {
 namespace ompl {
-
-std::optional<Eigen::MatrixXd> GenerateWaypoints(
+namespace detail {
+    
+std::optional<Eigen::MatrixXd> GenerateWaypointsImpl(
     const MultibodyPlant<double>& plant,
     std::shared_ptr<RobotDiagram<double>> diagram,
+    const Eigen::VectorXd q_start,
     const Eigen::VectorXd q_goal
-) {
-    // create context
-    auto context { diagram->CreateDefaultContext() };
-    const auto& fixed_plant_context { plant.GetMyContextFromRoot(*context) };
-    auto q_start { plant.GetPositions(fixed_plant_context) };
-
+) { 
     // create space
     Eigen::VectorXd lower_bounds { plant.GetPositionLowerLimits() };
     Eigen::VectorXd upper_bounds { plant.GetPositionUpperLimits() };
@@ -51,14 +48,14 @@ std::optional<Eigen::MatrixXd> GenerateWaypoints(
     }
     auto space { std::make_shared<ob::RealVectorStateSpace>(constants::SO101_NUM_Q) };
     space->setBounds(bounds);
-
+    
     // create space information
     auto si { std::make_shared<ob::SpaceInformation>(space) };
     si->setStateValidityChecker(
         std::make_shared<DrakeSO101ValidityChecker>(si, diagram)
     );
     si->setup();
-
+    
     // create problem definition
     ob::ScopedState start { space };
     ob::ScopedState goal { space };
@@ -71,12 +68,12 @@ std::optional<Eigen::MatrixXd> GenerateWaypoints(
     pdef->setOptimizationObjective(
         std::make_shared<ob::PathLengthOptimizationObjective>(si)
     );
-
+    
     // create planner
     ob::PlannerPtr planner { std::make_shared<og::RRTConnect>(si, true) };
     planner->setProblemDefinition(pdef);
     planner->setup();
-
+    
     // init constants
     constexpr int max_iters = { 10 };
     constexpr int min_waypoints { 5 };
@@ -127,12 +124,13 @@ std::optional<Eigen::MatrixXd> GenerateWaypoints(
             break;
         }
     }
-
+    
     if (waypoints_found)
-        return waypoints_mat;
+    return waypoints_mat;
     else
-        return std::nullopt;
+    return std::nullopt;
 }
-
+    
+} // namespace detail
 } // namespace ompl
 } // namespace motion_planning

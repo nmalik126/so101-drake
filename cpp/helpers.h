@@ -42,7 +42,8 @@ namespace helpers {
         void generate_so101_brick_welded_impl(
             MultibodyPlant<T>& plant,
             SceneGraph<T>& scene_graph,
-            Parser& parser
+            Parser& parser,
+            const Eigen::VectorXd q_init
         ) {
             // add mat
             auto mat = parser.AddModels(constants::model_paths::MAT)[0];
@@ -73,18 +74,24 @@ namespace helpers {
                 plant.GetFrameByName("mat_link", mat),
                 plant.GetFrameByName("box_link", box),
                 X_mat_box
-            );            
+            );
+
+            // add bin
+            auto bin = parser.AddModels(constants::model_paths::BIN_CLR)[0];
+            const drake::Vector3<T> T_mat_bin { constants::transforms::X_MAT_BIN::T };
+            const drake::Vector3<T> rpy_mat_bin { constants::transforms::X_MAT_BIN::R };
+            const RollPitchYaw R_mat_bin { rpy_mat_bin };
+            const RigidTransform X_mat_bin { R_mat_bin, T_mat_bin };
+            plant.WeldFrames(
+                plant.GetFrameByName("mat_link", mat),
+                plant.GetFrameByName("bin_link", bin),
+                X_mat_bin
+            );
 
             // finalize plant
             plant.Finalize();
 
             // set so101 default positions
-            const Eigen::VectorXd q_init { 
-                Eigen::VectorXd::Map(
-                    constants::SO101_Q_INIT, 
-                    constants::SO101_NUM_Q
-                ) 
-            };
             plant.SetDefaultPositions(so101, q_init);
         }
 
@@ -135,6 +142,18 @@ namespace helpers {
         // add box
         auto box = parser.AddModels(constants::model_paths::BOX)[0];
 
+        // add bin
+        auto bin = parser.AddModels(constants::model_paths::BIN)[0];
+        const drake::Vector3<double> T_mat_bin { constants::transforms::X_MAT_BIN::T };
+        const drake::Vector3<double> rpy_mat_bin { constants::transforms::X_MAT_BIN::R };
+        const RollPitchYaw R_mat_bin { rpy_mat_bin };
+        const RigidTransform X_mat_bin { R_mat_bin, T_mat_bin };
+        plant.WeldFrames(
+            plant.GetFrameByName("mat_link", mat),
+            plant.GetFrameByName("bin_link", bin),
+            X_mat_bin
+        );
+
         // finalize plants
         plant.Finalize();
         control_plant->Finalize();
@@ -177,13 +196,63 @@ namespace helpers {
         );
     }
 
+    inline void generate_so101_place(
+        MultibodyPlant<double>& plant,
+        SceneGraph<double>& scene_graph,
+        Parser& parser,
+        const Eigen::VectorXd q_grasp_closed
+    ) {
+        // add mat
+        auto mat = parser.AddModels(constants::model_paths::MAT)[0];
+        plant.WeldFrames(
+            plant.world_frame(),
+            plant.GetFrameByName("mat_link", mat)
+        );
+
+        // add so101
+        auto so101 = parser.AddModels(constants::model_paths::SO101_OBJ)[0];
+        const drake::Vector3<double> T_mat_so101 { constants::transforms::X_MAT_SO101::T };
+        const drake::Vector3<double> rpy_mat_so101 { constants::transforms::X_MAT_SO101::R };
+        const RollPitchYaw R_mat_so101 { rpy_mat_so101 };
+        const RigidTransform X_mat_so101 { R_mat_so101, T_mat_so101 };
+        plant.WeldFrames(
+            plant.GetFrameByName("mat_link", mat),
+            plant.GetFrameByName("base_link", so101),
+            X_mat_so101
+        );
+
+        // add bin
+        auto bin = parser.AddModels(constants::model_paths::BIN_CLR)[0];
+        const drake::Vector3<double> T_mat_bin { constants::transforms::X_MAT_BIN::T };
+        const drake::Vector3<double> rpy_mat_bin { constants::transforms::X_MAT_BIN::R };
+        const RollPitchYaw R_mat_bin { rpy_mat_bin };
+        const RigidTransform X_mat_bin { R_mat_bin, T_mat_bin };
+        plant.WeldFrames(
+            plant.GetFrameByName("mat_link", mat),
+            plant.GetFrameByName("bin_link", bin),
+            X_mat_bin
+        );
+
+        // finalize plant
+        plant.Finalize();
+
+        // set so101 default positions
+        plant.SetDefaultPositions(so101, q_grasp_closed);
+    }
+
     template<typename T>
     void generate_so101_brick_welded(
         MultibodyPlant<T>& plant,
         SceneGraph<T>& scene_graph
     ) {
         Parser parser{ &plant, &scene_graph };
-        detail::generate_so101_brick_welded_impl(plant, scene_graph, parser);
+        const Eigen::VectorXd q_init { 
+            Eigen::VectorXd::Map(
+                constants::SO101_Q_INIT, 
+                constants::SO101_NUM_Q
+            ) 
+        };
+        detail::generate_so101_brick_welded_impl(plant, scene_graph, parser, q_init);
     }
 
     template<typename T>
@@ -192,7 +261,22 @@ namespace helpers {
         SceneGraph<T>& scene_graph,
         Parser& parser
     ) {
-        detail::generate_so101_brick_welded_impl(plant, scene_graph, parser);
+        const Eigen::VectorXd q_init { 
+            Eigen::VectorXd::Map(
+                constants::SO101_Q_INIT, 
+                constants::SO101_NUM_Q
+            ) 
+        };
+        detail::generate_so101_brick_welded_impl(plant, scene_graph, parser, q_init);
+    }
+    template<typename T>
+    void generate_so101_brick_welded(
+        MultibodyPlant<T>& plant,
+        SceneGraph<T>& scene_graph,
+        Parser& parser,
+        const Eigen::VectorXd q_init
+    ) {
+        detail::generate_so101_brick_welded_impl(plant, scene_graph, parser, q_init);
     }
 
     inline void user_input_quit() {
@@ -248,12 +332,13 @@ namespace helpers {
     ) {
         auto& plant_context { plant.GetMyMutableContextFromRoot(&root_context) };
         const auto& visualizer_context { visualizer.GetMyContextFromRoot(root_context) };
+        auto so101 { plant.GetModelInstanceByName("so101_new_calib") };
 
         visualizer.StartRecording(false);
 
         for (double t = trajectory.start_time(); t <= trajectory.end_time(); t += time_step) {
             root_context.SetTime(t);
-            plant.SetPositions(&plant_context, trajectory.value(t));
+            plant.SetPositions(&plant_context, so101, trajectory.value(t));
             visualizer.ForcedPublish(visualizer_context);
         }
 

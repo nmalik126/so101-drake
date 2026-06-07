@@ -18,6 +18,12 @@ std::optional<Eigen::VectorXd> GenerateGoalConfig(
     const MultibodyPlant<double>& plant,
     std::shared_ptr<RobotDiagram<double>> diagram
 );
+
+std::optional<Eigen::VectorXd> GeneratePlaceConfig(
+    const MultibodyPlant<double>& plant,
+    std::shared_ptr<RobotDiagram<double>> diagram,
+    const Eigen::VectorXd q_grasp_closed
+);
     
 } // namespace inverse_kinematics
 } // namespace motion_planning
