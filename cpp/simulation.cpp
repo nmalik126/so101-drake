@@ -1,5 +1,6 @@
 #include "helpers.h"
 #include "motion_planning_helpers.h"
+#include "constants.h"
 
 #include <drake/planning/robot_diagram_builder.h>
 #include <drake/geometry/meshcat.h>
@@ -7,6 +8,10 @@
 #include <drake/systems/analysis/simulator.h>
 #include <drake/systems/primitives/trajectory_source.h>
 #include <drake/systems/primitives/discrete_derivative.h>
+#include <drake/common/trajectories/piecewise_polynomial.h>
+#include <drake/common/trajectories/composite_trajectory.h>
+#include <drake/common/copyable_unique_ptr.h>
+#include <drake/common/trajectories/trajectory.h>
 
 #include <Eigen/Dense>
 
@@ -21,6 +26,9 @@ using drake::geometry::MeshcatVisualizer;
 using drake::systems::Simulator;
 using drake::systems::TrajectorySource;
 using drake::systems::StateInterpolatorWithDiscreteDerivative;
+using drake::trajectories::PiecewisePolynomial;
+using drake::trajectories::CompositeTrajectory;
+using drake::trajectories::Trajectory;
 
 int main() {
     std::cout << "Simulation" << '\n';
@@ -43,18 +51,33 @@ int main() {
 
     // compute grasp plan
     std::cout << "computing grasp plan..." << '\n';
-    auto trajectory { ComputeGraspPlan() };
-    if (!trajectory) {
+    const auto grasp_plan_result { ComputeGraspPlan() };
+    if (!grasp_plan_result) {
         std::cout << "Grasp Plan Failure. Exiting..." << '\n';
         return 1;
     }
     std::cout << "grasp plan computed." << '\n';
 
+    // append gripper trajectory
+    const auto grasp_trajectory { grasp_plan_result.value() };
+    const Eigen::VectorXd q_grasp_open { grasp_trajectory.FinalValue() };
+    Eigen::VectorXd q_grasp_closed { q_grasp_open };
+    q_grasp_closed(constants::SO101_NUM_Q - 1) = -0.1;
+    const double grasp_traj_end_time { grasp_trajectory.end_time() };
+    const auto gripper_trajectory {
+        PiecewisePolynomial<double>::FirstOrderHold(
+            { grasp_traj_end_time, grasp_traj_end_time + 1.0 },
+            { q_grasp_open, q_grasp_closed }
+        )
+    };
+    const CompositeTrajectory<double> trajectory { { 
+        drake::copyable_unique_ptr<Trajectory<double>> { grasp_trajectory }, 
+        drake::copyable_unique_ptr<Trajectory<double>> { gripper_trajectory } 
+    } };
+
     // add trajectory source to diagram
     auto q_source {
-        diagram_builder.AddSystem<TrajectorySource>(
-            trajectory.value()
-        )
+        diagram_builder.AddSystem<TrajectorySource>(trajectory)
     };
     auto interpolator {
         diagram_builder.AddSystem<StateInterpolatorWithDiscreteDerivative>(
@@ -77,23 +100,15 @@ int main() {
     // build diagram
     auto diagram { builder.Build() };
     
-    // set desired positions
-    // const auto& controller { diagram->GetSubsystemByName("so101_controller") };
-    // auto context { diagram->CreateDefaultContext() };
-    // auto& controller_context { controller.GetMyMutableContextFromRoot(context.get()) };
-    // const auto x0 { Eigen::VectorXd::Zero(constants::SO101_NUM_Q * 2) };
-    // controller.GetInputPort("desired_state").FixValue(&controller_context, x0);
-
     // simulate
     std::cout << "simulating..." << '\n';
-    auto context { diagram->CreateDefaultContext() };
-    Simulator<double> simulator { *diagram, std::move(context) };
+    Simulator<double> simulator { *diagram };
     simulator.set_target_realtime_rate(1.0);
     meshcat->StartRecording();
     simulator.AdvanceTo(5.0);
     meshcat->StopRecording();
     meshcat->PublishRecording();
     helpers::user_input_quit();
-
+    
     return 0;
 }
