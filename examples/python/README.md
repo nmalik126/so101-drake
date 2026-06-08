@@ -45,14 +45,14 @@ Installation instructions retrieved from these links:
 
 ## Notebooks
 
-- `visualizer.ipynb`
+- `visualizer.ipynb`: Simple visualizer for SO101 model
 
-- `joint_limits.ipynb`
+- `joint_limits.ipynb`: Derivation of SO101 joint limits
 
-- `state_viewer.ipynb`
+- `state_viewer.ipynb`: View current robot state from SO101 hardware, visualize digital twin 
 
-- `diffik_pick.ipynb`
+- `diffik_pick.ipynb`: Perform pick-and-place task using Diff-IK in simulation
 
-- `hardware.ipynb`
+- `hardware.ipynb`: Perform pick-and-place task using Diff-IK on SO101 hardware, visualize digital twin
 
-- `motion_planning_test.ipynb`
+- `motion_planning_test.ipynb`: Perform bin-picking task using classical motion planning on SO101 hardware, visualize digital twin
