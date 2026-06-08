@@ -54,3 +54,17 @@ add_executable(hardware_test
     so101_lcm.cpp
 )
 target_link_libraries(hardware_test drake::drake)
+
+add_executable(hardware_demo
+    hardware_demo.cpp
+    inverse_kinematics.cpp
+    ompl_planning.cpp
+    ompl_validity_checker.cpp
+    trajectory_optimization.cpp
+    so101_lcm.cpp
+)
+target_include_directories(hardware_demo PRIVATE ${OMPL_INCLUDE_DIRS})
+target_link_libraries(hardware_demo PRIVATE
+    drake::drake
+    ${OMPL_LIBRARIES}
+)

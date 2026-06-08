@@ -53,12 +53,12 @@ std::optional<BsplineTrajectory<double>> GenerateTrajectory(
         plant.GetPositionUpperLimits()
     );
     trajopt.AddVelocityBounds(
-        plant.GetVelocityLowerLimits(),
-        plant.GetVelocityUpperLimits()
+        0.15 * plant.GetVelocityLowerLimits(),
+        0.15 * plant.GetVelocityUpperLimits()
     );
     trajopt.AddAccelerationBounds(
-        Eigen::VectorXd::Ones(constants::SO101_NUM_Q) * -2,
-        Eigen::VectorXd::Ones(constants::SO101_NUM_Q) * 2
+        Eigen::VectorXd::Ones(constants::SO101_NUM_Q) * -1,
+        Eigen::VectorXd::Ones(constants::SO101_NUM_Q) * 1
     );
 
     // add duration constraints
