@@ -1,26 +1,43 @@
 # C++ Examples
 
-This document outlines the C++ examples for SO101 manipulation tasks in Drake. Executables for both simulation-only and hardware-in-the-loop tasks are provided.
+This document outlines the C++ static libraries and executables for running manipulation tasks with the SO101 in Drake. Examples for both simulation-only and hardware-in-the-loop tasks are provided.
 
 ## Installation
-1. Install the Drake C++ library on your system according to the [instructions](https://drake.mit.edu/installation.html)
-2. Run the `build_fresh.sh` script
-3. After the initial build, run the `build.sh` script to compile subsequent changes
+
+1. Install the Drake and OMPL C++ libraries on your system
+
+2. `cd` into `src/` and run the `build_fresh.sh` script
+
+3. After the initial build, run the `build.sh` script to compile subsequent changes faster
+
+## Static Libraries
+
+The following static libraries are defined under `src/` and linked by the example programs:
+
+- `hardware` - Defines interfaces to Drake LCM objects for interacting with the SO101 hardware.
+
+- `kinematics` - Defines helper functions which run optimization-based Inverse Kinematics for bin-picking tasks.
+
+- `planning` - Defines helper functions which run OMPL RRT-Connect given start and goal robot configurations.
+
+- `optimization` - Defines helper functions which run Kinematic Trajectory Optimization given an initial guess from a sampling-based motion planner.
 
 ## Executables
 
-- `visualizer`: Simple visualizer for the SO101 model.
+The following example programs are available under `src/`:
 
-- `ik_test`: Runs Inverse Kinematics given a sample grasp goal. Visualizes the resulting configuration.
+- `visualizer` - Simple visualizer for the SO101 model.
 
-- `ompl_test`: Runs RRT-Connect given a sample start and goal configuration. Visualizes the resulting collision-free C-space path.
+- `ik_test` - Runs Inverse Kinematics given a sample grasp goal. Visualizes the resulting configuration.
 
-- `trajopt_test`: Runs Kinematic Trajectory Optimization given a sample start and goal configuration and an initial guess motion plan (waypoints). Visualizes the resulting optimal collision-free motion plan.
+- `ompl_test` - Runs RRT-Connect given a sample start and goal configuration. Visualizes the resulting collision-free C-space path.
 
-- `classic_motion_planning`: Runs Inverse Kinematics, RRT-Connect, and Kinematic Trajectory Optimization in sequence given a sample grasp goal. Visualizes the resulting optimal collision-free motion plan.
+- `trajopt_test` - Runs Kinematic Trajectory Optimization given a sample start and goal configuration and an initial guess motion plan (waypoints). Visualizes the resulting optimal collision-free motion plan.
 
-- `simulation`: Generates three motion plans (for pick, place, and stow) according to `classic_motion_planning` for a sample bin-picking task. Simulates the result. 
+- `classic_motion_planning` - Runs Inverse Kinematics, RRT-Connect, and Kinematic Trajectory Optimization in sequence given a sample grasp goal. Visualizes the resulting optimal collision-free motion plan.
 
-- `hardware_test`: Sends commands to the SO101 hardware to open and close its gripper from its rest configuration. Visualizes the digital-twin in real time.
+- `simulation` - Generates three motion plans (for pick, place, and stow) according to `classic_motion_planning` for a sample bin-picking task. Simulates the result. 
 
-- `hardware_demo`: Runs the bin-picking task outlined in `simulation` on the SO101 hardware. Visualizes the digital-twin in real time.
+- `hardware_test` - Sends commands to the SO101 hardware to open and close its gripper from its rest configuration. Visualizes the digital-twin in real time.
+
+- `hardware_demo` - Runs the bin-picking task outlined in `simulation` on the SO101 hardware. Visualizes the digital-twin in real time.
