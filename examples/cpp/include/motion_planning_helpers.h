@@ -1,7 +1,7 @@
 #include "helpers.h"
-#include "inverse_kinematics.h"
-#include "ompl_planning.h"
-#include "trajectory_optimization.h"
+#include "kinematics/inverse_kinematics.h"
+#include "planning/ompl_planning.h"
+#include "optimization/trajectory_optimization.h"
 #include "constants.h"
 
 #include <drake/common/trajectories/bspline_trajectory.h>

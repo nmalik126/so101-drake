@@ -1,4 +1,4 @@
-#include "inverse_kinematics.h"
+#include "kinematics/inverse_kinematics.h"
 
 #include "constants.h"
 

@@ -1,8 +1,8 @@
-#include "ompl_planning.h"
+#include "planning/ompl_planning.h"
 
 #include "constants.h"
-#include "ompl_validity_checker.h"
-#include "ompl_helpers.h"
+#include "planning/ompl_validity_checker.h"
+#include "planning/ompl_helpers.h"
 
 #include <drake/multibody/plant/multibody_plant.h>
 #include <drake/planning/robot_diagram.h>

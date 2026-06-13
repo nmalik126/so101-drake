@@ -1,4 +1,4 @@
-#include "trajectory_optimization.h"
+#include "optimization/trajectory_optimization.h"
 
 #include "constants.h"
 

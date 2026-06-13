@@ -1,8 +1,8 @@
-#include "so101_lcm.h"
+#include "hardware/so101_lcm.h"
 #include "helpers.h"
 #include "constants.h"
 
-#include "lcmdefs/messages/so101/lcmt_so101_configuration.hpp"
+#include "messages/so101/lcmt_so101_configuration.hpp"
 
 #include <drake/systems/framework/diagram_builder.h>
 #include <drake/geometry/scene_graph.h>

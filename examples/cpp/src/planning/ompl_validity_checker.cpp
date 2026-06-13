@@ -1,6 +1,6 @@
-#include "ompl_validity_checker.h"
+#include "planning/ompl_validity_checker.h"
 
-#include "ompl_helpers.h"
+#include "planning/ompl_helpers.h"
 
 #include <drake/planning/robot_diagram.h>
 #include <drake/planning/collision_checker_params.h>

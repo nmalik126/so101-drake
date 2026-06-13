@@ -1,7 +1,7 @@
 #include "helpers.h"
 #include "constants.h"
-#include "ompl_validity_checker.h"
-#include "ompl_helpers.h"
+#include "planning/ompl_validity_checker.h"
+#include "planning/ompl_helpers.h"
 
 #include <drake/planning/robot_diagram_builder.h>
 #include <drake/geometry/meshcat.h>

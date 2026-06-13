@@ -1,8 +1,8 @@
-#include "so101_lcm.h"
+#include "hardware/so101_lcm.h"
 
 #include "constants.h"
 
-#include "lcmdefs/messages/so101/lcmt_so101_configuration.hpp"
+#include "messages/so101/lcmt_so101_configuration.hpp"
 
 #include <drake/systems/framework/leaf_system.h>
 #include <drake/systems/framework/context.h>

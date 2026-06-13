@@ -1,7 +1,7 @@
 #include "helpers.h"
-#include "inverse_kinematics.h"
-#include "ompl_planning.h"
-#include "trajectory_optimization.h"
+#include "kinematics/inverse_kinematics.h"
+#include "planning/ompl_planning.h"
+#include "optimization/trajectory_optimization.h"
 
 #include <drake/planning/robot_diagram_builder.h>
 #include <drake/geometry/meshcat.h>
