@@ -4,7 +4,9 @@ This document outlines the Python examples for SO101 manipulation tasks in Drake
 
 ## Installation
 
-Tested on Ubuntu 22.04 with Python 3.12
+Tested on Ubuntu 22.04 with Python 3.12. 
+
+Warning: If Drake is already installed on your system by another method (e.g. from source or apt package), that installation may overlap with the pip installation described below. It is simplest to only maintain one installation of Drake per system.
 
 1. Install conda
 
@@ -45,14 +47,14 @@ Installation instructions retrieved from these links:
 
 ## Notebooks
 
-- `visualizer.ipynb`: Simple visualizer for SO101 model
+- `visualizer.ipynb` - Simple visualizer for SO101 model
 
-- `joint_limits.ipynb`: Derivation of SO101 joint limits
+- `joint_limits.ipynb` - Derivation of SO101 joint limits
 
-- `state_viewer.ipynb`: View current robot state from SO101 hardware, visualize digital twin 
+- `state_viewer.ipynb` - View current robot state from SO101 hardware, visualize digital twin 
 
-- `diffik_pick.ipynb`: Perform pick-and-place task using Diff-IK in simulation
+- `diffik_pick.ipynb` - Perform pick-and-place task using Diff-IK in simulation
 
-- `hardware.ipynb`: Perform pick-and-place task using Diff-IK on SO101 hardware, visualize digital twin
+- `hardware.ipynb` - Perform pick-and-place task using Diff-IK on SO101 hardware, visualize digital twin
 
-- `motion_planning_test.ipynb`: Perform bin-picking task using classical motion planning on SO101 hardware, visualize digital twin
+- `motion_planning_test.ipynb` - Perform bin-picking task using classical motion planning on SO101 hardware, visualize digital twin
