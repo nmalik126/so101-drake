@@ -6,6 +6,7 @@
 
 #include <drake/multibody/plant/multibody_plant.h>
 #include <drake/planning/robot_diagram.h>
+#include <drake/planning/scene_graph_collision_checker.h>
 
 #include <ompl/base/spaces/RealVectorBounds.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
@@ -24,6 +25,7 @@
 
 using drake::multibody::MultibodyPlant;
 using drake::planning::RobotDiagram;
+using drake::planning::SceneGraphCollisionChecker;
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -134,7 +136,8 @@ std::optional<Eigen::MatrixXd> GenerateWaypointsImpl(
 } // namespace detail
 
 SO101OMPL::SO101OMPL(
-    std::shared_ptr<RobotDiagram<double>> diagram
+    std::shared_ptr<RobotDiagram<double>> diagram,
+    std::shared_ptr<SceneGraphCollisionChecker> checker
 ) : diagram_ { diagram }
 {
     // create space
@@ -151,9 +154,14 @@ SO101OMPL::SO101OMPL(
     
     // create space information
     si_ = std::make_shared<ob::SpaceInformation>(space_);
-    si_->setStateValidityChecker(
-        std::make_shared<DrakeSO101ValidityChecker>(si_, diagram)
-    );
+    if (checker)
+        si_->setStateValidityChecker(
+            std::make_shared<DrakeSO101ValidityChecker>(si_, diagram, checker)
+        );
+    else
+        si_->setStateValidityChecker(
+            std::make_shared<DrakeSO101ValidityChecker>(si_, diagram)
+        );
     si_->setup();
     
     // create planner

@@ -47,6 +47,19 @@ DrakeSO101ValidityChecker::DrakeSO101ValidityChecker(
     context_ = checker_->MakeStandaloneModelContext();
 }
 
+DrakeSO101ValidityChecker::DrakeSO101ValidityChecker(
+    const ob::SpaceInformationPtr& si,
+    std::shared_ptr<RobotDiagram<double>> diagram,
+    std::shared_ptr<SceneGraphCollisionChecker> checker,
+    const double influence_distance
+) : ob::StateValidityChecker(si)
+  , gripper_link_index_ { diagram->plant().GetBodyByName("gripper_link").index() }
+  , moving_jaw_index_ { diagram->plant().GetBodyByName("moving_jaw_so101_v1_link").index() }
+  , checker_ { checker }
+  , context_ { checker->MakeStandaloneModelContext() }
+  , influence_distance_ { influence_distance }
+{}
+
 bool DrakeSO101ValidityChecker::isValid(const ob::State *state) const {
     return checker_->CheckContextConfigCollisionFree(
         context_.get(),

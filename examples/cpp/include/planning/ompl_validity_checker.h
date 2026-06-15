@@ -30,12 +30,19 @@ public:
         const double influence_distance = 5e0
     );
 
+    explicit DrakeSO101ValidityChecker(
+        const ob::SpaceInformationPtr& si,
+        std::shared_ptr<RobotDiagram<double>> diagram,
+        std::shared_ptr<SceneGraphCollisionChecker> checker,
+        const double influence_distance = 5e0
+    );
+
     bool isValid(const ob::State *state) const override;
 
     double clearance(const ob::State *state) const override;
 
 private:
-    std::unique_ptr<SceneGraphCollisionChecker> checker_;
+    std::shared_ptr<SceneGraphCollisionChecker> checker_;
     std::shared_ptr<CollisionCheckerContext> context_;
     const BodyIndex gripper_link_index_;
     const BodyIndex moving_jaw_index_;

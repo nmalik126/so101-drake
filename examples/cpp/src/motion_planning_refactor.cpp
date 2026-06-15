@@ -6,6 +6,8 @@
 #include <drake/planning/robot_diagram_builder.h>
 #include <drake/geometry/meshcat.h>
 #include <drake/geometry/meshcat_visualizer.h>
+#include <drake/planning/scene_graph_collision_checker.h>
+#include <drake/planning/collision_checker_params.h>
 
 #include <iostream>
 #include <memory>
@@ -13,6 +15,8 @@
 using motion_planning::inverse_kinematics::SO101InverseKinematicsPick;
 using motion_planning::ompl::SO101OMPL;
 using motion_planning::trajectory_optimization::SO101TrajOpt;
+using drake::planning::SceneGraphCollisionChecker;
+using drake::planning::CollisionCheckerParams;
 
 using drake::planning::RobotDiagramBuilder;
 using drake::geometry::Meshcat;
@@ -46,7 +50,19 @@ int main() {
     // create context
     auto context { diagram->CreateDefaultContext() };
     const auto& fixed_plant_context { plant.GetMyContextFromRoot(*context) };
-    
+
+    // create collision checker
+    std::cout << "creating collision checker..." << std::endl;
+    auto so101 { plant.GetModelInstanceByName("so101_new_calib") };
+    auto checker { std::make_shared<SceneGraphCollisionChecker>(
+        CollisionCheckerParams {
+            .model { diagram },
+            .robot_model_instances { { so101 } },
+            .edge_step_size { 0.01 }
+        }
+    ) };
+    std::cout << "collision checker created." << std::endl;
+
     // inverse kinematics
     std::cout << "running inverse kinematics..." << std::endl;
     SO101InverseKinematicsPick ik_pick { diagram };
@@ -61,7 +77,8 @@ int main() {
     
     // sampling-based motion planning
     std::cout << "running sampling-based motion planning..." << std::endl;
-    SO101OMPL sampling_planner { diagram };
+    checker->SetPaddingAllRobotEnvironmentPairs(8e-3);
+    SO101OMPL sampling_planner { diagram, checker };
     const auto q_start { plant.GetPositions(fixed_plant_context) };
     std::cout << "setting problem definition..." << std::endl;
     sampling_planner.set_pdef(q_start, q_pick);
@@ -77,7 +94,8 @@ int main() {
 
     // trajectory optimization
     std::cout << "running trajectory optimization..." << std::endl;
-    SO101TrajOpt trajopt { diagram };
+    checker->SetPaddingAllRobotEnvironmentPairs(4e-3);
+    SO101TrajOpt trajopt { diagram, checker };
     std::cout << "setting waypoints..." << std::endl;
     trajopt.set_waypoints(waypoints);
     std::cout << "solving..." << std::endl;

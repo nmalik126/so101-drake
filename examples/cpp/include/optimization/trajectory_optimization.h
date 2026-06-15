@@ -36,7 +36,8 @@ class SO101TrajOpt final {
 public:
 
     explicit SO101TrajOpt(
-        std::shared_ptr<RobotDiagram<double>> diagram
+        std::shared_ptr<RobotDiagram<double>> diagram,
+        std::shared_ptr<SceneGraphCollisionChecker> checker
     );
 
     SO101TrajOpt(const SO101TrajOpt&) = delete;
@@ -52,7 +53,7 @@ private:
 
     std::shared_ptr<RobotDiagram<double>> diagram_;
     std::unique_ptr<KinematicTrajectoryOptimization> trajopt_;
-    std::unique_ptr<SceneGraphCollisionChecker> checker_;
+    std::shared_ptr<SceneGraphCollisionChecker> checker_;
     std::shared_ptr<CollisionCheckerContext> context_;
     static constexpr int n_desired_waypoints_ { constants::TRAJOPT_N_WAYPOINTS };
     static constexpr int bspline_basis_order_ { 4 };

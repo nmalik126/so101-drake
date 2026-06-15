@@ -4,6 +4,7 @@
 
 #include <drake/multibody/plant/multibody_plant.h>
 #include <drake/planning/robot_diagram.h>
+#include <drake/planning/scene_graph_collision_checker.h>
 
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/base/SpaceInformation.h>
@@ -17,6 +18,7 @@
 
 using drake::multibody::MultibodyPlant;
 using drake::planning::RobotDiagram;
+using drake::planning::SceneGraphCollisionChecker;
 
 namespace ob = ompl::base;
 
@@ -59,7 +61,8 @@ class SO101OMPL final {
 public:
 
     explicit SO101OMPL(
-        std::shared_ptr<RobotDiagram<double>> diagram
+        std::shared_ptr<RobotDiagram<double>> diagram,
+        std::shared_ptr<SceneGraphCollisionChecker> checker = nullptr
     );
 
     SO101OMPL(const SO101OMPL&) = delete;

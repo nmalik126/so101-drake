@@ -108,8 +108,11 @@ std::optional<BsplineTrajectory<double>> GenerateTrajectory(
 }
 
 SO101TrajOpt::SO101TrajOpt(
-    std::shared_ptr<RobotDiagram<double>> diagram
+    std::shared_ptr<RobotDiagram<double>> diagram,
+    std::shared_ptr<SceneGraphCollisionChecker> checker
 ) : diagram_ { diagram }
+  , checker_ { checker }
+  , context_ { checker->MakeStandaloneModelContext() }
 {
     // init trajopt
     trajopt_ = std::make_unique<KinematicTrajectoryOptimization>(
@@ -144,16 +147,6 @@ SO101TrajOpt::SO101TrajOpt(
     trajopt_->AddPathVelocityConstraint(zero_velocity, zero_velocity, 1);
 
     // add collision avoidance constraint
-    auto so101 { plant.GetModelInstanceByName("so101_new_calib") };
-    checker_ = std::make_unique<SceneGraphCollisionChecker>(
-        CollisionCheckerParams {
-            .model { diagram_ },
-            .robot_model_instances { { so101 } },
-            .edge_step_size { 0.01 }
-        }
-    );
-    checker_->SetPaddingAllRobotEnvironmentPairs(1e-3);
-    context_ = checker_->MakeStandaloneModelContext();
     auto collision_constraint {
         std::make_shared<MinimumDistanceLowerBoundConstraint>(
             checker_.get(),
