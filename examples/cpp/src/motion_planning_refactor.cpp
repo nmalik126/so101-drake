@@ -1,6 +1,7 @@
 #include "helpers.h"
 #include "kinematics/inverse_kinematics.h"
 #include "planning/ompl_planning.h"
+#include "optimization/trajectory_optimization.h"
 
 #include <drake/planning/robot_diagram_builder.h>
 #include <drake/geometry/meshcat.h>
@@ -11,6 +12,7 @@
 
 using motion_planning::inverse_kinematics::SO101InverseKinematicsPick;
 using motion_planning::ompl::SO101OMPL;
+using motion_planning::trajectory_optimization::SO101TrajOpt;
 
 using drake::planning::RobotDiagramBuilder;
 using drake::geometry::Meshcat;
@@ -72,6 +74,27 @@ int main() {
     const auto waypoints { sampling_planner_result.value() };
     std::cout << "OMPL Success. Waypoints: " << std::endl;
     std::cout << waypoints.transpose() << std::endl;
+
+    // trajectory optimization
+    std::cout << "running trajectory optimization..." << std::endl;
+    SO101TrajOpt trajopt { diagram };
+    std::cout << "setting waypoints..." << std::endl;
+    trajopt.set_waypoints(waypoints);
+    std::cout << "solving..." << std::endl;
+    auto trajopt_result { trajopt.solve() };
+    if (!trajopt_result) {
+        std::cout << "TrajOpt Failure. Exiting..." << std::endl;
+        return 1;
+    }
+    const auto trajectory { trajopt_result.value() };
+    std::cout << "TrajOpt Success. Visualizing..." << std::endl;
+    helpers::publish_position_trajectory(
+        trajectory, 
+        *context, 
+        plant, 
+        visualizer
+    );
+    helpers::user_input_quit();
     
     return 0;
 }
