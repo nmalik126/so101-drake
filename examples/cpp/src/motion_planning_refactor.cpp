@@ -1,5 +1,6 @@
 #include "helpers.h"
 #include "kinematics/inverse_kinematics.h"
+#include "planning/ompl_planning.h"
 
 #include <drake/planning/robot_diagram_builder.h>
 #include <drake/geometry/meshcat.h>
@@ -9,13 +10,14 @@
 #include <memory>
 
 using motion_planning::inverse_kinematics::SO101InverseKinematicsPick;
+using motion_planning::ompl::SO101OMPL;
 
 using drake::planning::RobotDiagramBuilder;
 using drake::geometry::Meshcat;
 using drake::geometry::MeshcatVisualizer;
 
 int main() {
-    std::cout << "motion planning refactor" << '\n';
+    std::cout << "motion planning refactor" << std::endl;
 
     // init builder
     RobotDiagramBuilder<double> builder {};
@@ -24,9 +26,9 @@ int main() {
     auto& parser { builder.parser() };
 
     // init scenario
-    std::cout << "parsing started..." << '\n';
+    std::cout << "parsing started..." << std::endl;
     helpers::generate_so101_brick_welded(plant, scene_graph, parser);
-    std::cout << "parsing finished." << '\n';
+    std::cout << "parsing finished." << std::endl;
 
     // init meshcat
     auto meshcat { std::make_shared<Meshcat>() };
@@ -39,17 +41,37 @@ int main() {
     // build diagram
     std::shared_ptr diagram { builder.Build() };
 
+    // create context
+    auto context { diagram->CreateDefaultContext() };
+    const auto& fixed_plant_context { plant.GetMyContextFromRoot(*context) };
+    
     // inverse kinematics
     std::cout << "running inverse kinematics..." << std::endl;
     SO101InverseKinematicsPick ik_pick { diagram };
     std::cout << "solving..." << std::endl;
     auto ik_pick_result { ik_pick.solve() };
     if (!ik_pick_result) {
-        std::cout << "IK Failure. Exiting..." << '\n';
+        std::cout << "IK Failure. Exiting..." << std::endl;
         return 1;
     }
     const auto q_pick { ik_pick_result.value() };
     std::cout << "IK Success. Q Pick: " << q_pick.transpose() << std::endl;
+    
+    // sampling-based motion planning
+    std::cout << "running sampling-based motion planning..." << std::endl;
+    SO101OMPL sampling_planner { diagram };
+    const auto q_start { plant.GetPositions(fixed_plant_context) };
+    std::cout << "setting problem definition..." << std::endl;
+    sampling_planner.set_pdef(q_start, q_pick);
+    std::cout << "solving..." << std::endl;
+    auto sampling_planner_result { sampling_planner.solve() };
+    if (!sampling_planner_result) {
+        std::cout << "Sampling Planner Failure. Exiting..." << std::endl;
+        return 1;
+    }
+    const auto waypoints { sampling_planner_result.value() };
+    std::cout << "OMPL Success. Waypoints: " << std::endl;
+    std::cout << waypoints.transpose() << std::endl;
     
     return 0;
 }

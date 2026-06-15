@@ -38,6 +38,7 @@ add_executable(motion_planning_refactor motion_planning_refactor.cpp)
 target_link_libraries(motion_planning_refactor
     PRIVATE
         kinematics
+        planning
 )
 
 add_executable(simulation simulation.cpp)
