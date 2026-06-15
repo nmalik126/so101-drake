@@ -1,0 +1,16 @@
+docs/* linguist-documentation=true
+media/* linguist-documentation=true
+
+*.ipynb linguist-language=Python
+*.cpp linguist-language=C++
+*.h linguist-language=C++
+
+*.urdf linguist-language=YAML
+*.yaml linguist-language=YAML
+
+*.obj linguist-generated=true
+*.vtk linguist-generated=true
+*.stl linguist-generated=true
+*.part linguist-generated=true
+*.npy linguist-generated=true
+*.json linguist-generated=true
