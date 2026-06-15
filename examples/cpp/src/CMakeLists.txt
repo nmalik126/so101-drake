@@ -34,6 +34,12 @@ target_link_libraries(classic_motion_planning
         optimization
 )
 
+add_executable(motion_planning_refactor motion_planning_refactor.cpp)
+target_link_libraries(motion_planning_refactor
+    PRIVATE
+        kinematics
+)
+
 add_executable(simulation simulation.cpp)
 target_link_libraries(simulation
     PRIVATE

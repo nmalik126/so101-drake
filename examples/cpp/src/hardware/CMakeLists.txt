@@ -7,7 +7,7 @@ add_library(hardware
 target_include_directories(hardware
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
-        ${PROJECT_SOURCE_DIR}/../../lcmdefs
+        ${PROJECT_SOURCE_DIR}/lcmdefs
 )
 
 target_link_libraries(hardware
