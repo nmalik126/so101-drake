@@ -25,27 +25,13 @@ using drake::geometry::MeshcatVisualizer;
 int main() {
     std::cout << "motion planning refactor" << std::endl;
 
-    // init builder
-    RobotDiagramBuilder<double> builder {};
-    auto& plant { builder.plant() };
-    auto& scene_graph { builder.scene_graph() };
-    auto& parser { builder.parser() };
-
-    // init scenario
-    std::cout << "parsing started..." << std::endl;
-    helpers::generate_so101_brick_welded(plant, scene_graph, parser);
-    std::cout << "parsing finished." << std::endl;
-
-    // init meshcat
-    auto meshcat { std::make_shared<Meshcat>() };
-    auto& visualizer { MeshcatVisualizer<double>::AddToBuilder(
-        &(builder.builder()), 
-        scene_graph, 
-        meshcat
-    ) };
-
-    // build diagram
-    std::shared_ptr diagram { builder.Build() };
+    // create scenario
+    std::cout << "creating scenario..." << std::endl;
+    auto assets { helpers::generate_so101_brick_welded_diagram() };
+    auto& plant { assets.plant };
+    auto& visualizer { assets.visualizer };
+    auto diagram { assets.diagram };
+    std::cout << "scenario created." << std::endl;
 
     // create context
     auto context { diagram->CreateDefaultContext() };

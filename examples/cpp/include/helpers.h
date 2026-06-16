@@ -13,6 +13,7 @@
 #include <drake/geometry/meshcat_visualizer.h>
 #include <drake/systems/framework/diagram_builder.h>
 #include <drake/systems/controllers/inverse_dynamics_controller.h>
+#include <drake/planning/robot_diagram.h>
 
 #include <Eigen/Dense>
 
@@ -33,6 +34,7 @@ using drake::geometry::Meshcat;
 using drake::geometry::MeshcatVisualizer;
 using drake::systems::DiagramBuilder;
 using drake::systems::controllers::InverseDynamicsController;
+using drake::planning::RobotDiagram;
 
 namespace helpers {
 
@@ -277,6 +279,41 @@ namespace helpers {
         const Eigen::VectorXd q_init
     ) {
         detail::generate_so101_brick_welded_impl(plant, scene_graph, parser, q_init);
+    }
+
+    struct ScenarioAssets {
+        MultibodyPlant<double>& plant;
+        MeshcatVisualizerd& visualizer;
+        std::shared_ptr<RobotDiagram<double>> diagram;
+    };
+
+    inline ScenarioAssets generate_so101_brick_welded_diagram() {
+        // init builder
+        RobotDiagramBuilder<double> builder {};
+        auto& plant { builder.plant() };
+        auto& scene_graph { builder.scene_graph() };
+        auto& parser { builder.parser() };
+
+        // init scenario
+        helpers::generate_so101_brick_welded(plant, scene_graph, parser);
+
+        // init meshcat
+        auto meshcat { std::make_shared<Meshcat>() };
+        auto& visualizer { MeshcatVisualizer<double>::AddToBuilder(
+            &(builder.builder()), 
+            scene_graph, 
+            meshcat
+        ) };
+
+        // build diagram
+        std::shared_ptr diagram { builder.Build() };
+
+        // return result
+        return ScenarioAssets {
+            .plant { plant },
+            .visualizer { visualizer },
+            .diagram { diagram }
+        };
     }
 
     inline void user_input_quit() {
