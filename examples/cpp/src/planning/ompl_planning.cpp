@@ -209,6 +209,7 @@ std::optional<Eigen::MatrixXd> SO101OMPL::solve() {
     {
         const ob::State* state;
         double clearance;
+        int idx;
     };
     std::vector<Candidate> candidates;
     for (int i { 1 }; i < n_states - 1; ++i) {
@@ -216,28 +217,31 @@ std::optional<Eigen::MatrixXd> SO101OMPL::solve() {
         bool valid { si_->getStateValidityChecker()->isValid(s) };
         double clearance { si_->getStateValidityChecker()->clearance(s) };
         if (valid)
-            candidates.push_back({ s, clearance });
+            candidates.push_back({ s, clearance, i });
     }
     if (candidates.size() < n_desired_waypoints_ - 2)
         return std::nullopt;
 
-    // retrieve top candidates
+    // sort candidates by clearance
     std::sort(candidates.begin(), candidates.end(),
         [](const Candidate& a, const Candidate& b) {
             return a.clearance < b.clearance;
         }
     );
-    std::vector<Eigen::VectorXd> waypoints {
-        helpers::state_to_vector(path->getState(0))
-    };
-    for (int i { 0 }; i < n_desired_waypoints_ - 2; ++i) {
-        waypoints.push_back(
-            helpers::state_to_vector(candidates[i].state)
-        );
-    }
-    waypoints.push_back(
-        helpers::state_to_vector(path->getState(n_states - 1))
+    // trim to first n_desired
+    candidates.resize(n_desired_waypoints_ - 2);
+    candidates.shrink_to_fit();
+    // sort first n_desired by idx
+    std::sort(candidates.begin(), candidates.end(),
+        [](const Candidate& a, const Candidate& b) {
+            return a.idx < b.idx;
+        }
     );
+    // generate waypoints
+    std::vector<Eigen::VectorXd> waypoints { helpers::state_to_vector(path->getState(0)) };
+    for (const auto& candidate : candidates)
+        waypoints.push_back(helpers::state_to_vector(candidate.state));
+    waypoints.push_back(helpers::state_to_vector(path->getState(n_states - 1)));
     
     // return waypoints matrix
     Eigen::MatrixXd waypoints_mat { constants::SO101_NUM_Q, n_desired_waypoints_ };
