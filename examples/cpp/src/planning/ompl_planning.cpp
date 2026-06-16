@@ -166,6 +166,7 @@ SO101OMPL::SO101OMPL(
     
     // create planner
     planner_ = std::make_shared<og::RRTConnect>(si_, true);
+    planner_->setup();
 }
     
 void SO101OMPL::set_pdef(
@@ -184,7 +185,6 @@ void SO101OMPL::set_pdef(
     
     // set planner problem definition
     planner_->setProblemDefinition(pdef_);
-    planner_->setup();
 }
 
 std::optional<Eigen::MatrixXd> SO101OMPL::solve() {

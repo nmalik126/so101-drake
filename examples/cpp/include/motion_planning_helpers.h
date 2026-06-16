@@ -224,7 +224,7 @@ inline std::optional<CompositeTrajectory<double>> ComputePickPlaceTrajectory() {
 }
 
 inline std::optional<BsplineTrajectory<double>> GenerateMotionPlan(
-    const SO101InverseKinematics& ik,
+    SO101InverseKinematics& ik,
     SO101OMPL& sampling_planner,
     SO101TrajOpt& trajopt,
     const Eigen::VectorXd q_start,
@@ -232,6 +232,7 @@ inline std::optional<BsplineTrajectory<double>> GenerateMotionPlan(
 ) {
     // inverse kinematics
     std::cout << "solving inverse kinematics..." << std::endl;
+    ik.set_initial_guess(q_start);
     auto ik_result { ik.solve() };
     if (!ik_result) {
         std::cout << "IK Failure. Exiting..." << std::endl;

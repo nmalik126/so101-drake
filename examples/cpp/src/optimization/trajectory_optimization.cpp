@@ -113,7 +113,9 @@ SO101TrajOpt::SO101TrajOpt(
 ) : diagram_ { diagram }
   , checker_ { checker }
   , context_ { checker->MakeStandaloneModelContext() }
-{
+{}
+
+void SO101TrajOpt::set_waypoints(const Eigen::MatrixXd waypoints) {
     // init trajopt
     trajopt_ = std::make_unique<KinematicTrajectoryOptimization>(
         constants::SO101_NUM_Q,
@@ -158,9 +160,7 @@ SO101TrajOpt::SO101TrajOpt(
     };
     for (const auto s : Eigen::VectorXd::LinSpaced(25, 0.0, 1.0))
         trajopt_->AddPathPositionConstraint(collision_constraint, s);
-}
-
-void SO101TrajOpt::set_waypoints(const Eigen::MatrixXd waypoints) {
+        
     // set initial trajectory
     BsplineBasis<double> basis { bspline_basis_order_, n_desired_waypoints_ };
     BsplineTrajectory<double> init_traj {

@@ -195,8 +195,8 @@ void SO101InverseKinematicsPlace::add_constraints() {
     const RigidTransform X_mat_boxgoal { R_mat_boxgoal, T_mat_boxgoal };
     ik_->AddPositionConstraint(
         gripper_frame,
-        // Eigen::Vector3d { { 0.015, 0, -0.12 } },
-        Eigen::Vector3d { { 0, 0, -0.12 } },
+        Eigen::Vector3d { { 0.015, 0, -0.12 } },
+        // Eigen::Vector3d { { 0, 0, -0.15 } },
         plant.world_frame(),
         T_mat_boxgoal,
         T_mat_boxgoal

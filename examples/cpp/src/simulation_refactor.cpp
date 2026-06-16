@@ -3,17 +3,25 @@
 #include "planning/ompl_planning.h"
 #include "optimization/trajectory_optimization.h"
 #include "motion_planning_helpers.h"
+#include "constants.h"
 
 #include <drake/planning/scene_graph_collision_checker.h>
 #include <drake/planning/collision_checker_params.h>
 #include <drake/systems/primitives/trajectory_source.h>
 #include <drake/systems/primitives/discrete_derivative.h>
 #include <drake/systems/analysis/simulator.h>
+#include <drake/common/trajectories/piecewise_polynomial.h>
+#include <drake/common/trajectories/composite_trajectory.h>
+#include <drake/common/copyable_unique_ptr.h>
+#include <drake/common/trajectories/trajectory.h>
+
+#include <Eigen/Dense>
 
 #include <iostream>
 #include <memory>
 
 using motion_planning::inverse_kinematics::SO101InverseKinematicsPick;
+using motion_planning::inverse_kinematics::SO101InverseKinematicsPlace;
 using motion_planning::ompl::SO101OMPL;
 using motion_planning::trajectory_optimization::SO101TrajOpt;
 
@@ -22,6 +30,9 @@ using drake::planning::CollisionCheckerParams;
 using drake::systems::TrajectorySource;
 using drake::systems::StateInterpolatorWithDiscreteDerivative;
 using drake::systems::Simulator;
+using drake::trajectories::PiecewisePolynomial;
+using drake::trajectories::CompositeTrajectory;
+using drake::trajectories::Trajectory;
 
 int main() {
     std::cout << "simulation refactor" << std::endl;
@@ -57,6 +68,7 @@ int main() {
 
     // create motion planning objects
     SO101InverseKinematicsPick ik_pick { plan_diagram };
+    SO101InverseKinematicsPlace ik_place { plan_diagram };
     SO101OMPL sampling_planner { plan_diagram, checker };
     SO101TrajOpt trajopt { plan_diagram, checker };
     const Eigen::VectorXd q_init { 
@@ -65,7 +77,8 @@ int main() {
         ) 
     };
 
-    // solve motion planning problem
+    // solve pick plan
+    std::cout << "solving pick plan..." << std::endl;
     auto pick_result { motion_planning::GenerateMotionPlan(
         ik_pick, sampling_planner, trajopt, q_init, checker
     ) };
@@ -73,7 +86,61 @@ int main() {
         std::cout << "Pick Plan Failed. Exiting..." << std::endl;
         return 1;
     }
-    const auto trajectory { pick_result.value() };
+    const auto pick_trajectory { pick_result.value() };
+
+    // compute gripper close trajectory
+    const Eigen::VectorXd q_pick_open { pick_trajectory.FinalValue() };
+    Eigen::VectorXd q_pick_closed { q_pick_open };
+    q_pick_closed(constants::SO101_NUM_Q - 1) = -0.1;
+    const auto gripper_close_trajectory {
+        PiecewisePolynomial<double>::FirstOrderHold(
+            { 0.0, 1.0 },
+            { q_pick_open, q_pick_closed }
+        )
+    };
+
+    // filter collisions between welded box and gripper bodies
+    auto box_index { plan_plant.GetBodyByName("box_link").index() };
+    auto gripper_link_index { plan_plant.GetBodyByName("gripper_link").index() };
+    auto moving_jaw_index { plan_plant.GetBodyByName("moving_jaw_so101_v1_link").index() };
+    checker->SetCollisionFilteredBetween(box_index, gripper_link_index, true);
+    checker->SetCollisionFilteredBetween(box_index, moving_jaw_index, true);
+
+    // add box collision geometry to gripper body
+    
+    // solve place plan
+    std::cout << "solving place plan..." << std::endl;
+    auto place_result { motion_planning::GenerateMotionPlan(
+        ik_place, sampling_planner, trajopt, q_pick_closed, checker
+    ) };
+    if (!place_result) {
+        std::cout << "Place Plan Failed. Exiting..." << std::endl;
+        return 1;
+    }
+    const auto place_trajectory { place_result.value() };
+
+    // compute gripper open trajectory
+    const Eigen::VectorXd q_place_closed { place_trajectory.FinalValue() };
+    Eigen::VectorXd q_place_open { q_place_closed };
+    q_place_open(constants::SO101_NUM_Q - 1) = 0.5;
+    const auto gripper_open_trajectory {
+        PiecewisePolynomial<double>::FirstOrderHold(
+            { 0.0, 1.0 },
+            { q_place_closed, q_place_open }
+        )
+    };
+
+    // solve rest plan
+    
+    // construct composite trajectory
+    const auto trajectory {
+        CompositeTrajectory<double>::AlignAndConcatenate({
+            drake::copyable_unique_ptr<Trajectory<double>> { pick_trajectory },
+            drake::copyable_unique_ptr<Trajectory<double>> { gripper_close_trajectory },
+            drake::copyable_unique_ptr<Trajectory<double>> { place_trajectory },
+            drake::copyable_unique_ptr<Trajectory<double>> { gripper_open_trajectory }
+        })
+    };
 
     // add trajectory source to diagram
     auto q_source {
@@ -101,7 +168,7 @@ int main() {
     auto sim_diagram { sim_builder->Build() };
     
     // simulate
-    std::cout << "simulating..." << '\n';
+    std::cout << "simulating..." << std::endl;
     Simulator<double> simulator { *sim_diagram };
     simulator.set_target_realtime_rate(1.0);
     sim_meshcat->StartRecording();
