@@ -15,9 +15,9 @@
 using motion_planning::inverse_kinematics::SO101InverseKinematicsPick;
 using motion_planning::ompl::SO101OMPL;
 using motion_planning::trajectory_optimization::SO101TrajOpt;
+
 using drake::planning::SceneGraphCollisionChecker;
 using drake::planning::CollisionCheckerParams;
-
 using drake::planning::RobotDiagramBuilder;
 using drake::geometry::Meshcat;
 using drake::geometry::MeshcatVisualizer;
@@ -27,9 +27,9 @@ int main() {
 
     // create scenario
     std::cout << "creating scenario..." << std::endl;
-    auto assets { helpers::generate_so101_brick_welded_diagram() };
-    auto& plant { assets.plant };
-    auto& visualizer { assets.visualizer };
+    auto assets { helpers::generate_so101_brick_diagram(true, true) };
+    auto& plant { *(assets.plant) };
+    auto& visualizer { *(assets.visualizer) };
     auto diagram { assets.diagram };
     std::cout << "scenario created." << std::endl;
 

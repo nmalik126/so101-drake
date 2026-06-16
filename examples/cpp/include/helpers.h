@@ -282,38 +282,58 @@ namespace helpers {
     }
 
     struct ScenarioAssets {
-        MultibodyPlant<double>& plant;
-        MeshcatVisualizerd& visualizer;
-        std::shared_ptr<RobotDiagram<double>> diagram;
+        std::unique_ptr<RobotDiagramBuilder<double>> builder {};
+        MultibodyPlant<double>* plant {};
+        std::shared_ptr<Meshcat> meshcat {};
+        MeshcatVisualizerd* visualizer {};
+        std::shared_ptr<RobotDiagram<double>> diagram {};
+        DiagramBuilder<double>* diagram_builder {};
     };
 
-    inline ScenarioAssets generate_so101_brick_welded_diagram() {
+    inline ScenarioAssets generate_so101_brick_diagram(
+        bool welded,
+        bool visualize
+    ) {
         // init builder
-        RobotDiagramBuilder<double> builder {};
-        auto& plant { builder.plant() };
-        auto& scene_graph { builder.scene_graph() };
-        auto& parser { builder.parser() };
+        // RobotDiagramBuilder<double> builder {};
+        auto builder { std::make_unique<RobotDiagramBuilder<double>>() };
+        auto& plant { builder->plant() };
+        auto& scene_graph { builder->scene_graph() };
+        auto& parser { builder->parser() };
+        auto& diagram_builder { builder->builder() };
+
+        // init result
+        ScenarioAssets assets {
+            .plant { &plant },
+            .diagram_builder { &diagram_builder }
+        };
 
         // init scenario
-        helpers::generate_so101_brick_welded(plant, scene_graph, parser);
+        if (welded)
+            generate_so101_brick_welded(plant, scene_graph, parser);
+        else
+            generate_so101_brick(plant, scene_graph, parser, diagram_builder);
 
         // init meshcat
-        auto meshcat { std::make_shared<Meshcat>() };
-        auto& visualizer { MeshcatVisualizer<double>::AddToBuilder(
-            &(builder.builder()), 
-            scene_graph, 
-            meshcat
-        ) };
+        if (visualize) {
+            auto meshcat { std::make_shared<Meshcat>() };
+            auto& visualizer { MeshcatVisualizer<double>::AddToBuilder(
+                &diagram_builder, 
+                scene_graph, 
+                meshcat
+            ) };
+            assets.visualizer = &visualizer;
+            assets.meshcat = meshcat;
+        }
 
         // build diagram
-        std::shared_ptr diagram { builder.Build() };
+        if (welded)
+            assets.diagram = builder->Build();
+        else
+            assets.builder = std::move(builder);
 
         // return result
-        return ScenarioAssets {
-            .plant { plant },
-            .visualizer { visualizer },
-            .diagram { diagram }
-        };
+        return assets;
     }
 
     inline void user_input_quit() {

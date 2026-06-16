@@ -50,6 +50,14 @@ target_link_libraries(simulation
         optimization
 )
 
+add_executable(simulation_refactor simulation_refactor.cpp)
+target_link_libraries(simulation_refactor
+    PRIVATE
+        kinematics
+        planning
+        optimization
+)
+
 add_executable(hardware_test hardware_test.cpp)
 target_link_libraries(hardware_test
     PRIVATE

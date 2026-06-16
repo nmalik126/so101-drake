@@ -11,6 +11,7 @@
 #include <drake/common/trajectories/composite_trajectory.h>
 #include <drake/common/trajectories/piecewise_polynomial.h>
 #include <drake/common/copyable_unique_ptr.h>
+#include <drake/planning/scene_graph_collision_checker.h>
 
 #include <Eigen/Dense>
 
@@ -21,6 +22,9 @@ using motion_planning::inverse_kinematics::GenerateGoalConfig;
 using motion_planning::ompl::GenerateWaypoints;
 using motion_planning::trajectory_optimization::GenerateTrajectory;
 using motion_planning::inverse_kinematics::GeneratePlaceConfig;
+using motion_planning::inverse_kinematics::SO101InverseKinematics;
+using motion_planning::ompl::SO101OMPL;
+using motion_planning::trajectory_optimization::SO101TrajOpt;
 
 using drake::trajectories::BsplineTrajectory;
 using drake::planning::RobotDiagramBuilder;
@@ -28,6 +32,7 @@ using drake::geometry::Meshcat;
 using drake::geometry::MeshcatVisualizer;
 using drake::trajectories::CompositeTrajectory;
 using drake::trajectories::PiecewisePolynomial;
+using drake::planning::SceneGraphCollisionChecker;
 
 namespace motion_planning {
 
@@ -218,4 +223,46 @@ inline std::optional<CompositeTrajectory<double>> ComputePickPlaceTrajectory() {
     });
 }
 
+inline std::optional<BsplineTrajectory<double>> GenerateMotionPlan(
+    const SO101InverseKinematics& ik,
+    SO101OMPL& sampling_planner,
+    SO101TrajOpt& trajopt,
+    const Eigen::VectorXd q_start,
+    std::shared_ptr<SceneGraphCollisionChecker> checker
+) {
+    // inverse kinematics
+    std::cout << "solving inverse kinematics..." << std::endl;
+    auto ik_result { ik.solve() };
+    if (!ik_result) {
+        std::cout << "IK Failure. Exiting..." << std::endl;
+        return std::nullopt;
+    }
+    const auto q_goal { ik_result.value() };
+    std::cout << "IK Success. Q Goal: " << q_goal.transpose() << std::endl;
+    
+    // run sampling planner
+    std::cout << "running sampling planner..." << std::endl;
+    checker->SetPaddingAllRobotEnvironmentPairs(8e-3);
+    sampling_planner.set_pdef(q_start, q_goal);
+    auto sampling_planner_result { sampling_planner.solve() };
+    if (!sampling_planner_result) {
+        std::cout << "Sampling Planner Failure. Exiting..." << std::endl;
+        return std::nullopt;
+    }
+    const auto waypoints { sampling_planner_result.value() };
+    std::cout << "sampling planner success, waypoints:" << std::endl;
+    std::cout << waypoints.transpose() << std::endl;
+
+    // run trajopt
+    std::cout << "running trajectory optimization..." << std::endl;
+    checker->SetPaddingAllRobotEnvironmentPairs(6e-3);
+    trajopt.set_waypoints(waypoints);
+    auto trajopt_result { trajopt.solve() };
+    if (!trajopt_result) {
+        std::cout << "TrajOpt Failure. Exiting..." << std::endl;
+        return std::nullopt;
+    }
+    return trajopt_result.value();
 }
+
+} // namespace motion_planning
