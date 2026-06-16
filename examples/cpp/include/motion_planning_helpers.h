@@ -223,6 +223,42 @@ inline std::optional<CompositeTrajectory<double>> ComputePickPlaceTrajectory() {
     });
 }
 
+namespace detail {
+
+inline std::optional<BsplineTrajectory<double>> GenerateMotionPlanImpl(
+    SO101OMPL& sampling_planner,
+    SO101TrajOpt& trajopt,
+    const Eigen::VectorXd q_start,
+    const Eigen::VectorXd q_goal,
+    std::shared_ptr<SceneGraphCollisionChecker> checker
+) {
+    // run sampling planner
+    std::cout << "running sampling planner..." << std::endl;
+    checker->SetPaddingAllRobotEnvironmentPairs(8e-3);
+    sampling_planner.set_pdef(q_start, q_goal);
+    auto sampling_planner_result { sampling_planner.solve() };
+    if (!sampling_planner_result) {
+        std::cout << "Sampling Planner Failure. Exiting..." << std::endl;
+        return std::nullopt;
+    }
+    const auto waypoints { sampling_planner_result.value() };
+    std::cout << "sampling planner success, waypoints:" << std::endl;
+    std::cout << waypoints.transpose() << std::endl;
+
+    // run trajopt
+    std::cout << "running trajectory optimization..." << std::endl;
+    checker->SetPaddingAllRobotEnvironmentPairs(4e-3);
+    trajopt.set_waypoints(waypoints);
+    auto trajopt_result { trajopt.solve() };
+    if (!trajopt_result) {
+        std::cout << "TrajOpt Failure. Exiting..." << std::endl;
+        return std::nullopt;
+    }
+    return trajopt_result.value();
+}
+
+} // namespace detail
+
 inline std::optional<BsplineTrajectory<double>> GenerateMotionPlan(
     SO101InverseKinematics& ik,
     SO101OMPL& sampling_planner,
@@ -241,29 +277,21 @@ inline std::optional<BsplineTrajectory<double>> GenerateMotionPlan(
     const auto q_goal { ik_result.value() };
     std::cout << "IK Success. Q Goal: " << q_goal.transpose() << std::endl;
     
-    // run sampling planner
-    std::cout << "running sampling planner..." << std::endl;
-    checker->SetPaddingAllRobotEnvironmentPairs(8e-3);
-    sampling_planner.set_pdef(q_start, q_goal);
-    auto sampling_planner_result { sampling_planner.solve() };
-    if (!sampling_planner_result) {
-        std::cout << "Sampling Planner Failure. Exiting..." << std::endl;
-        return std::nullopt;
-    }
-    const auto waypoints { sampling_planner_result.value() };
-    std::cout << "sampling planner success, waypoints:" << std::endl;
-    std::cout << waypoints.transpose() << std::endl;
+    return detail::GenerateMotionPlanImpl(
+        sampling_planner, trajopt, q_start, q_goal, checker
+    );
+}
 
-    // run trajopt
-    std::cout << "running trajectory optimization..." << std::endl;
-    checker->SetPaddingAllRobotEnvironmentPairs(6e-3);
-    trajopt.set_waypoints(waypoints);
-    auto trajopt_result { trajopt.solve() };
-    if (!trajopt_result) {
-        std::cout << "TrajOpt Failure. Exiting..." << std::endl;
-        return std::nullopt;
-    }
-    return trajopt_result.value();
+inline std::optional<BsplineTrajectory<double>> GenerateMotionPlan(
+    SO101OMPL& sampling_planner,
+    SO101TrajOpt& trajopt,
+    const Eigen::VectorXd q_start,
+    const Eigen::VectorXd q_goal,
+    std::shared_ptr<SceneGraphCollisionChecker> checker
+) {
+    return detail::GenerateMotionPlanImpl(
+        sampling_planner, trajopt, q_start, q_goal, checker
+    );
 }
 
 } // namespace motion_planning

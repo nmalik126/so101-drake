@@ -131,6 +131,15 @@ int main() {
     };
 
     // solve rest plan
+    std::cout << "solving rest plan..." << std::endl;
+    auto rest_result { motion_planning::GenerateMotionPlan(
+        sampling_planner, trajopt, q_place_open, q_init, checker
+    ) };
+    if (!rest_result) {
+        std::cout << "Rest Plan Failed. Exiting..." << std::endl;
+        return 1;
+    }
+    const auto rest_trajectory { rest_result.value() };
     
     // construct composite trajectory
     const auto trajectory {
@@ -138,7 +147,8 @@ int main() {
             drake::copyable_unique_ptr<Trajectory<double>> { pick_trajectory },
             drake::copyable_unique_ptr<Trajectory<double>> { gripper_close_trajectory },
             drake::copyable_unique_ptr<Trajectory<double>> { place_trajectory },
-            drake::copyable_unique_ptr<Trajectory<double>> { gripper_open_trajectory }
+            drake::copyable_unique_ptr<Trajectory<double>> { gripper_open_trajectory },
+            drake::copyable_unique_ptr<Trajectory<double>> { rest_trajectory },
         })
     };
 
