@@ -75,44 +75,50 @@ int main() {
     const auto q_pick { ik_pick_result.value() };
     std::cout << "IK Success. Q Pick: " << q_pick.transpose() << std::endl;
     
-    // sampling-based motion planning
-    std::cout << "running sampling-based motion planning..." << std::endl;
-    checker->SetPaddingAllRobotEnvironmentPairs(8e-3);
+    // init sampling planner
     SO101OMPL sampling_planner { diagram, checker };
     const auto q_start { plant.GetPositions(fixed_plant_context) };
     std::cout << "setting problem definition..." << std::endl;
     sampling_planner.set_pdef(q_start, q_pick);
-    std::cout << "solving..." << std::endl;
-    auto sampling_planner_result { sampling_planner.solve() };
-    if (!sampling_planner_result) {
-        std::cout << "Sampling Planner Failure. Exiting..." << std::endl;
-        return 1;
-    }
-    const auto waypoints { sampling_planner_result.value() };
-    std::cout << "OMPL Success. Waypoints: " << std::endl;
-    std::cout << waypoints.transpose() << std::endl;
 
-    // trajectory optimization
-    std::cout << "running trajectory optimization..." << std::endl;
-    checker->SetPaddingAllRobotEnvironmentPairs(4e-3);
+    // init trajopt
     SO101TrajOpt trajopt { diagram, checker };
-    std::cout << "setting waypoints..." << std::endl;
-    trajopt.set_waypoints(waypoints);
-    std::cout << "solving..." << std::endl;
-    auto trajopt_result { trajopt.solve() };
-    if (!trajopt_result) {
-        std::cout << "TrajOpt Failure. Exiting..." << std::endl;
-        return 1;
+
+    for (int i { 0 }; i < 10; i++) {
+        std::cout << "iteration: " << i << std::endl;
+        // run sampling planner
+        std::cout << "running sampling planner..." << std::endl;
+        checker->SetPaddingAllRobotEnvironmentPairs(8e-3);
+        auto sampling_planner_result { sampling_planner.solve() };
+        if (!sampling_planner_result) {
+            std::cout << "sampling planner failure." << std::endl;
+            continue;
+        }
+        const auto waypoints { sampling_planner_result.value() };
+        std::cout << "sampling planner success, waypoints:" << std::endl;
+        std::cout << waypoints.transpose() << std::endl;
+
+        // run trajopt
+        std::cout << "running trajectory optimization..." << std::endl;
+        checker->SetPaddingAllRobotEnvironmentPairs(6e-3);
+        trajopt.set_waypoints(waypoints);
+        auto trajopt_result { trajopt.solve() };
+        if (!trajopt_result) {
+            std::cout << "trajopt failure." << std::endl;
+            continue;
+        }
+        const auto trajectory { trajopt_result.value() };
+        std::cout << "trajopt success, visualizing..." << std::endl;
+        helpers::publish_position_trajectory(
+            trajectory, 
+            *context, 
+            plant, 
+            visualizer
+        );
+        helpers::user_input_quit();
+        return 0;
     }
-    const auto trajectory { trajopt_result.value() };
-    std::cout << "TrajOpt Success. Visualizing..." << std::endl;
-    helpers::publish_position_trajectory(
-        trajectory, 
-        *context, 
-        plant, 
-        visualizer
-    );
-    helpers::user_input_quit();
     
-    return 0;
+    std::cout << "Failed to solve motion planning problem. Exiting..." << std::endl;
+    return 1;
 }
