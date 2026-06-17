@@ -15,8 +15,6 @@
 #include <drake/common/copyable_unique_ptr.h>
 #include <drake/common/trajectories/trajectory.h>
 #include <drake/math/rigid_transform.h>
-#include <drake/math/roll_pitch_yaw.h>
-#include <drake/planning/robot_clearance.h>
 
 #include <Eigen/Dense>
 
@@ -37,8 +35,6 @@ using drake::trajectories::PiecewisePolynomial;
 using drake::trajectories::CompositeTrajectory;
 using drake::trajectories::Trajectory;
 using drake::math::RigidTransformd;
-using drake::math::RollPitchYaw;
-using drake::planning::RobotCollisionType;
 
 int main() {
     std::cout << "simulation refactor" << std::endl;
@@ -146,6 +142,9 @@ int main() {
             { q_place_closed, q_place_open }
         )
     };
+
+    // remove box collision geometry from gripper body
+    checker->RemoveAllAddedCollisionShapes("grasped_box");
 
     // solve rest plan
     std::cout << "solving rest plan..." << std::endl;

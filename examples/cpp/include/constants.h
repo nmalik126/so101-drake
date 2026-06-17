@@ -55,5 +55,6 @@ namespace constants {
     inline constexpr double SO101_Q_INIT[SO101_NUM_Q] { 0, -1.822, 1.55, 0.906, 0, 0 };
 
     inline constexpr int TRAJOPT_N_WAYPOINTS { 8 };
+    inline constexpr int TRAJOPT_N_RETRIES { 10 };
 
 } // namespace constants

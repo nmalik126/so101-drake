@@ -14,6 +14,7 @@
 #include <drake/solvers/solve.h>
 #include <drake/solvers/minimum_value_constraint.h>
 #include <drake/planning/collision_checker_context.h>
+#include <drake/solvers/snopt_solver.h>
 
 #include <Eigen/Dense>
 
@@ -32,6 +33,7 @@ using drake::multibody::MinimumDistanceLowerBoundConstraint;
 using drake::solvers::MinimumValuePenaltyFunction;
 using drake::solvers::Solve;
 using drake::planning::CollisionCheckerContext;
+using drake::solvers::SnoptSolver;
 
 namespace motion_planning {
 namespace trajectory_optimization {
@@ -178,7 +180,19 @@ void SO101TrajOpt::set_waypoints(const Eigen::MatrixXd waypoints) {
 
 std::optional<BsplineTrajectory<double>> SO101TrajOpt::solve() {
     auto& prog { trajopt_->get_mutable_prog() };
-    auto result { Solve(prog) };
+    prog.SetSolverOption(
+        SnoptSolver::id(),
+        "Time limit",
+        1.0
+    );
+    prog.SetSolverOption(
+        SnoptSolver::id(),
+        "Major iterations limit",
+        50
+    );
+
+    SnoptSolver solver {};
+    auto result { solver.Solve(prog) };
     if (result.is_success())
         return trajopt_->ReconstructTrajectory(result);
     else

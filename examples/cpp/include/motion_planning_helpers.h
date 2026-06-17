@@ -232,29 +232,37 @@ inline std::optional<BsplineTrajectory<double>> GenerateMotionPlanImpl(
     const Eigen::VectorXd q_goal,
     std::shared_ptr<SceneGraphCollisionChecker> checker
 ) {
-    // run sampling planner
-    std::cout << "running sampling planner..." << std::endl;
-    checker->SetPaddingAllRobotEnvironmentPairs(8e-3);
-    sampling_planner.set_pdef(q_start, q_goal);
-    auto sampling_planner_result { sampling_planner.solve() };
-    if (!sampling_planner_result) {
-        std::cout << "Sampling Planner Failure. Exiting..." << std::endl;
-        return std::nullopt;
+    for (int i { 0 }; i < constants::TRAJOPT_N_RETRIES; ++i) {
+        std::cout << "motion plan iteration: " << i << std::endl;
+        // run sampling planner
+        std::cout << "running sampling planner..." << std::endl;
+        checker->SetPaddingAllRobotEnvironmentPairs(8e-3);
+        sampling_planner.set_pdef(q_start, q_goal);
+        auto sampling_planner_result { sampling_planner.solve() };
+        if (!sampling_planner_result) {
+            std::cout << "Sampling Planner Failure. Retrying..." << std::endl;
+            continue;
+        }
+        const auto waypoints { sampling_planner_result.value() };
+        std::cout << "sampling planner success, waypoints:" << std::endl;
+        std::cout << waypoints.transpose() << std::endl;
+    
+        // run trajopt
+        std::cout << "running trajectory optimization..." << std::endl;
+        checker->SetPaddingAllRobotEnvironmentPairs(1e-3);
+        trajopt.set_waypoints(waypoints);
+        std::cout << "solving..." << std::endl;
+        auto trajopt_result { trajopt.solve() };
+        if (!trajopt_result) {
+            std::cout << "TrajOpt Failure. Retrying..." << std::endl;
+            continue;
+        }
+        std::cout << "trajopt success." << std::endl;
+        return trajopt_result.value();
     }
-    const auto waypoints { sampling_planner_result.value() };
-    std::cout << "sampling planner success, waypoints:" << std::endl;
-    std::cout << waypoints.transpose() << std::endl;
-
-    // run trajopt
-    std::cout << "running trajectory optimization..." << std::endl;
-    checker->SetPaddingAllRobotEnvironmentPairs(1e-3);
-    trajopt.set_waypoints(waypoints);
-    auto trajopt_result { trajopt.solve() };
-    if (!trajopt_result) {
-        std::cout << "TrajOpt Failure. Exiting..." << std::endl;
-        return std::nullopt;
-    }
-    return trajopt_result.value();
+    std::cout << "Unable to solve motion plan after " 
+              << constants::TRAJOPT_N_RETRIES << " retries. Exiting" << std::endl;
+    return std::nullopt;
 }
 
 } // namespace detail
