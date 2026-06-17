@@ -72,3 +72,12 @@ target_link_libraries(hardware_demo
         planning
         optimization
 )
+
+add_executable(hardware_refactor hardware_refactor.cpp)
+target_link_libraries(hardware_refactor
+    PRIVATE
+        hardware
+        kinematics
+        planning
+        optimization
+)
