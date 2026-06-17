@@ -1,136 +1,77 @@
 #include "helpers.h"
-#include "constants.h"
+#include "optimization/trajectory_optimization.h"
 
-#include <drake/planning/robot_diagram_builder.h>
-#include <drake/geometry/meshcat.h>
-#include <drake/geometry/meshcat_visualizer.h>
-#include <drake/math/bspline_basis.h>
-#include <drake/math/matrix_util.h>
-#include <drake/common/trajectories/bspline_trajectory.h>
-#include <drake/planning/trajectory_optimization/kinematic_trajectory_optimization.h>
-#include <drake/planning/collision_checker_params.h>
 #include <drake/planning/scene_graph_collision_checker.h>
-#include <drake/multibody/inverse_kinematics/minimum_distance_lower_bound_constraint.h>
-#include <drake/solvers/solve.h>
-#include <drake/solvers/minimum_value_constraint.h>
+#include <drake/planning/collision_checker_params.h>
 
 #include <Eigen/Dense>
 
 #include <iostream>
-#include <vector>
 #include <memory>
 
-using drake::planning::RobotDiagramBuilder;
-using drake::geometry::Meshcat;
-using drake::geometry::MeshcatVisualizer;
-using drake::math::BsplineBasis;
-using drake::math::EigenToStdVector;
-using drake::trajectories::BsplineTrajectory;
-using drake::planning::trajectory_optimization::KinematicTrajectoryOptimization;
-using drake::planning::CollisionCheckerParams;
+using motion_planning::trajectory_optimization::SO101TrajOpt;
+
 using drake::planning::SceneGraphCollisionChecker;
-using drake::multibody::MinimumDistanceLowerBoundConstraint;
-using drake::solvers::MinimumValuePenaltyFunction;
-using drake::solvers::Solve;
+using drake::planning::CollisionCheckerParams;
 
 int main() {
-    std::cout << "TrajOpt Test" << '\n';
+    std::cout << "TrajOpt Test" << std::endl;
 
-    // read waypoints
-    const Eigen::MatrixXd waypoints { helpers::load_matrix("waypoints.bin") };
-    const int n_waypoints { static_cast<int>(waypoints.cols()) };
-    std::cout << waypoints.transpose() << '\n';
-
-    // init diagram
-    RobotDiagramBuilder<double> builder {};
-    auto& plant { builder.plant() };
-    auto& scene_graph { builder.scene_graph() };
-    auto& parser { builder.parser() };
-
-    // init scenario
-    std::cout << "parsing started..." << '\n';
-    helpers::generate_so101_brick_welded(plant, scene_graph, parser);
-    std::cout << "parsing finished." << '\n';
-
-    // meshcat
-    auto meshcat { std::make_shared<Meshcat>() };
-    auto& visualizer { MeshcatVisualizer<double>::AddToBuilder(&(builder.builder()), scene_graph, meshcat) };
+    // create scenario
+    std::cout << "creating scenario..." << std::endl;
+    auto assets { helpers::generate_so101_brick_diagram(true, true) };
+    auto& plant { *(assets.plant) };
+    auto& visualizer { *(assets.visualizer) };
+    auto diagram { assets.diagram };
+    std::cout << "scenario created." << std::endl;
 
     // create context
-    std::shared_ptr diagram { builder.Build() };
     auto context { diagram->CreateDefaultContext() };
-    const auto& fixed_plant_context { plant.GetMyContextFromRoot(*context) };
-    auto& mutable_plant_context { plant.GetMyMutableContextFromRoot(context.get()) };
 
-    // init trajopt
-    BsplineBasis<double> basis { 4, n_waypoints };
-    BsplineTrajectory<double> init_traj { basis, EigenToStdVector<double>(waypoints) };
-    KinematicTrajectoryOptimization trajopt { constants::SO101_NUM_Q, n_waypoints, 4 };
-    trajopt.SetInitialGuess(init_traj);
-
-    // add kinematic constraints
-    std::cout << "configuring trajopt..." << '\n';
-    trajopt.AddPositionBounds(
-        plant.GetPositionLowerLimits(),
-        plant.GetPositionUpperLimits()
-    );
-    trajopt.AddVelocityBounds(
-        plant.GetVelocityLowerLimits(),
-        plant.GetVelocityUpperLimits()
-    );
-    trajopt.AddAccelerationBounds(
-        Eigen::VectorXd::Ones(constants::SO101_NUM_Q) * -2,
-        Eigen::VectorXd::Ones(constants::SO101_NUM_Q) * 2
-    );
-
-    // add duration constraints
-    trajopt.AddDurationCost(1e0);
-    trajopt.AddDurationConstraint(0.5, 5.0);
-
-    // add start/goal constraints
-    const auto q_start { waypoints.col(0) };
-    const auto q_goal { waypoints.col(n_waypoints - 1) };
-    trajopt.AddPathPositionConstraint(q_start, q_start, 0);
-    trajopt.AddPathPositionConstraint(q_goal, q_goal, 1);
-    const auto zero_velocity { Eigen::VectorXd::Zero(constants::SO101_NUM_Q) };
-    trajopt.AddPathVelocityConstraint(zero_velocity, zero_velocity, 0);
-    trajopt.AddPathVelocityConstraint(zero_velocity, zero_velocity, 1);
-
-    // add collision avoidance constraint
+    // create collision checker
+    std::cout << "creating collision checker..." << std::endl;
     auto so101 { plant.GetModelInstanceByName("so101_new_calib") };
-    SceneGraphCollisionChecker checker { CollisionCheckerParams {
-        .model { diagram },
-        .robot_model_instances { { so101 } },
-        .edge_step_size { 0.01 }
-    } };
-    checker.SetPaddingAllRobotEnvironmentPairs(1e-3);
-    auto model_context { checker.MakeStandaloneModelContext() };
-    auto collision_constraint {
-        std::make_shared<MinimumDistanceLowerBoundConstraint>(
-            &checker,
-            1e-3,
-            model_context.get(),
-            MinimumValuePenaltyFunction {},
-            1e-2
-        )
+    auto checker { std::make_shared<SceneGraphCollisionChecker>(
+        CollisionCheckerParams {
+            .model { diagram },
+            .robot_model_instances { { so101 } },
+            .edge_step_size { 0.01 }
+        }
+    ) };
+    std::cout << "collision checker created." << std::endl;
+
+    // define waypoints
+    const Eigen::MatrixXd waypoints_transpose {
+        {         0,     -1.822,       1.55,      0.906,          0,          0},
+        {-0.0100888,   -1.79968,     1.5166,   0.888432,  0.0012219, 0.00449613},
+        {-0.0201775,   -1.77736,    1.48321,   0.870864, 0.00244381, 0.00899226},
+        { -0.184314,    0.11317,   0.157648,    0.95813,    1.21599,   0.527864},
+        {  -0.20422,   0.133516,   0.170679,   0.986003,    1.23802,   0.529527},
+        { -0.224125,   0.153862,   0.183709,    1.01388,    1.26005,   0.531189},
+        { -0.244031,   0.174207,    0.19674,    1.04175,    1.28208,   0.532852},
+        { -0.263936,   0.194553,    0.20977,    1.06962,    1.30411,   0.534514},
     };
-    for (const auto s : Eigen::VectorXd::LinSpaced(25, 0.0, 1.0))
-        trajopt.AddPathPositionConstraint(collision_constraint, s);
-    std::cout << "trajopt configured." << '\n';
+    const Eigen::MatrixXd waypoints { waypoints_transpose.transpose() };
 
-    // solve trajopt
-    std::cout << "solving trajopt..." << '\n';
-    auto& prog { trajopt.get_mutable_prog() };
-    auto result { Solve(prog) };
-    std::cout 
-        << "trajopt result: "
-        << (result.is_success() ? "success" : "failure") 
-        << '\n';
-
-    // visualize trajectory
-    auto trajectory { trajopt.ReconstructTrajectory(result) };
-    helpers::publish_position_trajectory(trajectory, *context, plant, visualizer);
+    // run trajopt
+    std::cout << "running trajectory optimization..." << std::endl;
+    SO101TrajOpt trajopt { diagram, checker };
+    checker->SetPaddingAllRobotEnvironmentPairs(6e-3);
+    trajopt.set_waypoints(waypoints);
+    auto trajopt_result { trajopt.solve() };
+    if (!trajopt_result) {
+        std::cout << "trajopt failure." << std::endl;
+        return 1;
+    }
+    const auto trajectory { trajopt_result.value() };
+    std::cout << "trajopt success, visualizing..." << std::endl;
+    helpers::publish_position_trajectory(
+        trajectory, 
+        *context, 
+        plant, 
+        visualizer
+    );
     helpers::user_input_quit();
-
+    
     return 0;
 }

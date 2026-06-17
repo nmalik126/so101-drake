@@ -26,32 +26,16 @@ target_link_libraries(trajopt_test
         optimization
 )
 
-add_executable(classic_motion_planning classic_motion_planning.cpp)
-target_link_libraries(classic_motion_planning
+add_executable(motion_planning_test motion_planning_test.cpp)
+target_link_libraries(motion_planning_test
     PRIVATE
         kinematics
         planning
         optimization
 )
 
-add_executable(motion_planning_refactor motion_planning_refactor.cpp)
-target_link_libraries(motion_planning_refactor
-    PRIVATE
-        kinematics
-        planning
-        optimization
-)
-
-add_executable(simulation simulation.cpp)
-target_link_libraries(simulation
-    PRIVATE
-        kinematics
-        planning
-        optimization
-)
-
-add_executable(simulation_refactor simulation_refactor.cpp)
-target_link_libraries(simulation_refactor
+add_executable(simulation_demo simulation_demo.cpp)
+target_link_libraries(simulation_demo
     PRIVATE
         kinematics
         planning
@@ -66,15 +50,6 @@ target_link_libraries(hardware_test
 
 add_executable(hardware_demo hardware_demo.cpp)
 target_link_libraries(hardware_demo
-    PRIVATE
-        hardware
-        kinematics
-        planning
-        optimization
-)
-
-add_executable(hardware_refactor hardware_refactor.cpp)
-target_link_libraries(hardware_refactor
     PRIVATE
         hardware
         kinematics

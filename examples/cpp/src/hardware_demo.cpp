@@ -24,7 +24,7 @@
 
 using motion_planning::hardware::SO101StatusReceiver;
 using motion_planning::hardware::SO101CommandSender;
-using motion_planning::ComputePickPlaceTrajectory;
+using motion_planning::GeneratePickPlaceMotionPlans;
 
 using drake::systems::DiagramBuilder;
 using drake::geometry::SceneGraph;
@@ -40,7 +40,7 @@ using drake::systems::rendering::MultibodyPositionToGeometryPose;
 using drake::systems::TrajectorySource;
 
 int main() {
-    std::cout << "Hardware Test" << '\n';
+    std::cout << "Hardware Demo" << '\n';
 
     // init diagram
     DiagramBuilder<double> diagram_builder {};
@@ -111,7 +111,7 @@ int main() {
     );
 
     // wire trajectory source
-    const auto pick_place_result { ComputePickPlaceTrajectory() };
+    const auto pick_place_result { GeneratePickPlaceMotionPlans() };
     if (!pick_place_result) {
         std::cout << "Pick and Place Computation Failed. Exiting..." << '\n';
         return 1;
