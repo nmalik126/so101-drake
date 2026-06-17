@@ -158,7 +158,8 @@ void SO101TrajOpt::set_waypoints(const Eigen::MatrixXd waypoints) {
             1e-2
         )
     };
-    for (const auto s : Eigen::VectorXd::LinSpaced(25, 0.0, 1.0))
+    constexpr int n_collision_checks { 25 };
+    for (const auto s : Eigen::VectorXd::LinSpaced(n_collision_checks, 1.0/n_collision_checks, 1.0))
         trajopt_->AddPathPositionConstraint(collision_constraint, s);
         
     // set initial trajectory

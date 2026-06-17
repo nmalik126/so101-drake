@@ -14,6 +14,9 @@
 #include <drake/common/trajectories/composite_trajectory.h>
 #include <drake/common/copyable_unique_ptr.h>
 #include <drake/common/trajectories/trajectory.h>
+#include <drake/math/rigid_transform.h>
+#include <drake/math/roll_pitch_yaw.h>
+#include <drake/planning/robot_clearance.h>
 
 #include <Eigen/Dense>
 
@@ -33,6 +36,9 @@ using drake::systems::Simulator;
 using drake::trajectories::PiecewisePolynomial;
 using drake::trajectories::CompositeTrajectory;
 using drake::trajectories::Trajectory;
+using drake::math::RigidTransformd;
+using drake::math::RollPitchYaw;
+using drake::planning::RobotCollisionType;
 
 int main() {
     std::cout << "simulation refactor" << std::endl;
@@ -100,13 +106,24 @@ int main() {
     };
 
     // filter collisions between welded box and gripper bodies
-    auto box_index { plan_plant.GetBodyByName("box_link").index() };
-    auto gripper_link_index { plan_plant.GetBodyByName("gripper_link").index() };
-    auto moving_jaw_index { plan_plant.GetBodyByName("moving_jaw_so101_v1_link").index() };
-    checker->SetCollisionFilteredBetween(box_index, gripper_link_index, true);
-    checker->SetCollisionFilteredBetween(box_index, moving_jaw_index, true);
+    const auto& box_body { plan_plant.GetBodyByName("box_link") };
+    const auto& gripper_link_body { plan_plant.GetBodyByName("gripper_link") };
+    const auto& moving_jaw_body { plan_plant.GetBodyByName("moving_jaw_so101_v1_link") };
+    checker->SetCollisionFilteredBetween(box_body.index(), gripper_link_body.index(), true);
+    checker->SetCollisionFilteredBetween(box_body.index(), moving_jaw_body.index(), true);
 
     // add box collision geometry to gripper body
+    auto fk_context { plan_plant.CreateDefaultContext() };
+    plan_plant.SetPositions(fk_context.get(), q_pick_closed);
+    const RigidTransformd X_world_gripper { plan_plant.EvalBodyPoseInWorld(*fk_context, gripper_link_body) };
+    const RigidTransformd X_world_box { plan_plant.EvalBodyPoseInWorld(*fk_context, box_body) };
+    const RigidTransformd X_gripper_box { X_world_gripper.inverse() * X_world_box };
+    checker->AddCollisionShapeToBody(
+        "grasped_box",
+        gripper_link_body,
+        drake::geometry::Box(0.04, 0.03, 0.03),
+        X_gripper_box
+    );
     
     // solve place plan
     std::cout << "solving place plan..." << std::endl;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "constants.h"
+#include "planning/ompl_validity_checker.h"
 
 #include <drake/multibody/plant/multibody_plant.h>
 #include <drake/planning/robot_diagram.h>
@@ -84,6 +85,7 @@ private:
     std::shared_ptr<ob::SpaceInformation> si_;
     std::shared_ptr<ob::Planner> planner_;
     std::shared_ptr<ob::ProblemDefinition> pdef_;
+    std::shared_ptr<DrakeSO101ValidityChecker> validity_checker_;
     static constexpr int n_desired_waypoints_ { constants::TRAJOPT_N_WAYPOINTS };
 
 };

@@ -11,6 +11,7 @@
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/base/StateValidityChecker.h>
 #include <ompl/base/State.h>
+#include <ompl/base/SpaceInformation.h>
 
 #include <Eigen/Dense>
 
@@ -61,6 +62,8 @@ DrakeSO101ValidityChecker::DrakeSO101ValidityChecker(
 {}
 
 bool DrakeSO101ValidityChecker::isValid(const ob::State *state) const {
+    if (si_->distance(state, start_state_) < 1e-5)
+        return true;
     return checker_->CheckContextConfigCollisionFree(
         context_.get(),
         helpers::state_to_vector(state)

@@ -247,7 +247,7 @@ inline std::optional<BsplineTrajectory<double>> GenerateMotionPlanImpl(
 
     // run trajopt
     std::cout << "running trajectory optimization..." << std::endl;
-    checker->SetPaddingAllRobotEnvironmentPairs(4e-3);
+    checker->SetPaddingAllRobotEnvironmentPairs(1e-3);
     trajopt.set_waypoints(waypoints);
     auto trajopt_result { trajopt.solve() };
     if (!trajopt_result) {

@@ -155,13 +155,10 @@ SO101OMPL::SO101OMPL(
     // create space information
     si_ = std::make_shared<ob::SpaceInformation>(space_);
     if (checker)
-        si_->setStateValidityChecker(
-            std::make_shared<DrakeSO101ValidityChecker>(si_, diagram, checker)
-        );
+        validity_checker_ = std::make_shared<DrakeSO101ValidityChecker>(si_, diagram, checker);
     else
-        si_->setStateValidityChecker(
-            std::make_shared<DrakeSO101ValidityChecker>(si_, diagram)
-        );
+        validity_checker_ = std::make_shared<DrakeSO101ValidityChecker>(si_, diagram);
+    si_->setStateValidityChecker(validity_checker_);
     si_->setup();
     
     // create planner
@@ -173,15 +170,18 @@ void SO101OMPL::set_pdef(
     const Eigen::VectorXd q_start,
     const Eigen::VectorXd q_goal
 ) {
-    // create problem definition
+    // define start and goal states
     ob::ScopedState start { space_ };
     ob::ScopedState goal { space_ };
     for (int i { 0 }; i < constants::SO101_NUM_Q; ++i) {
         start->as<ob::RealVectorStateSpace::StateType>()->values[i] = q_start(i);
         goal->as<ob::RealVectorStateSpace::StateType>()->values[i] = q_goal(i);
     }
+
+    // create problem definition
     pdef_ = std::make_shared<ob::ProblemDefinition>(si_);
     pdef_->setStartAndGoalStates(start, goal);
+    validity_checker_->set_start_state(pdef_->getStartState(0));
     
     // set planner problem definition
     planner_->setProblemDefinition(pdef_);

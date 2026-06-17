@@ -41,11 +41,14 @@ public:
 
     double clearance(const ob::State *state) const override;
 
+    void set_start_state(ob::State* start_state) { start_state_ = start_state; }
+
 private:
     std::shared_ptr<SceneGraphCollisionChecker> checker_;
     std::shared_ptr<CollisionCheckerContext> context_;
     const BodyIndex gripper_link_index_;
     const BodyIndex moving_jaw_index_;
     const double influence_distance_;
+    ob::State* start_state_;
     static constexpr int num_q_ { constants::SO101_NUM_Q };
 };
