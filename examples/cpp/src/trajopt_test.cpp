@@ -1,4 +1,5 @@
 #include "helpers.h"
+#include "scenario_helpers.h"
 #include "optimization/trajectory_optimization.h"
 
 #include <drake/planning/scene_graph_collision_checker.h>

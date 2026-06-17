@@ -1,5 +1,6 @@
 #include "hardware/so101_lcm.h"
 #include "helpers.h"
+#include "scenario_helpers.h"
 #include "constants.h"
 
 #include "messages/so101/lcmt_so101_configuration.hpp"

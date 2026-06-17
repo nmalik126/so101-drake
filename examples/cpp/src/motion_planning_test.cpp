@@ -1,4 +1,5 @@
 #include "helpers.h"
+#include "scenario_helpers.h"
 #include "kinematics/inverse_kinematics.h"
 #include "planning/ompl_planning.h"
 #include "optimization/trajectory_optimization.h"

@@ -1,54 +1,108 @@
+#include "motion_planning_helpers.h"
+
 #include "helpers.h"
 #include "scenario_helpers.h"
 #include "kinematics/inverse_kinematics.h"
 #include "planning/ompl_planning.h"
 #include "optimization/trajectory_optimization.h"
-#include "motion_planning_helpers.h"
 #include "constants.h"
 
+#include <drake/common/trajectories/bspline_trajectory.h>
+#include <drake/common/trajectories/composite_trajectory.h>
+#include <drake/common/trajectories/piecewise_polynomial.h>
+#include <drake/common/copyable_unique_ptr.h>
 #include <drake/planning/scene_graph_collision_checker.h>
 #include <drake/planning/collision_checker_params.h>
-#include <drake/systems/primitives/trajectory_source.h>
-#include <drake/systems/primitives/discrete_derivative.h>
-#include <drake/systems/analysis/simulator.h>
-#include <drake/common/trajectories/piecewise_polynomial.h>
-#include <drake/common/trajectories/composite_trajectory.h>
-#include <drake/common/copyable_unique_ptr.h>
-#include <drake/common/trajectories/trajectory.h>
 #include <drake/math/rigid_transform.h>
 
 #include <Eigen/Dense>
 
-#include <iostream>
+#include <optional>
 #include <memory>
 
+using motion_planning::inverse_kinematics::SO101InverseKinematics;
 using motion_planning::inverse_kinematics::SO101InverseKinematicsPick;
 using motion_planning::inverse_kinematics::SO101InverseKinematicsPlace;
 using motion_planning::ompl::SO101OMPL;
 using motion_planning::trajectory_optimization::SO101TrajOpt;
 
+using drake::trajectories::BsplineTrajectory;
+using drake::trajectories::CompositeTrajectory;
+using drake::trajectories::PiecewisePolynomial;
 using drake::planning::SceneGraphCollisionChecker;
 using drake::planning::CollisionCheckerParams;
-using drake::systems::TrajectorySource;
-using drake::systems::StateInterpolatorWithDiscreteDerivative;
-using drake::systems::Simulator;
-using drake::trajectories::PiecewisePolynomial;
-using drake::trajectories::CompositeTrajectory;
-using drake::trajectories::Trajectory;
 using drake::math::RigidTransformd;
 
-int main() {
-    std::cout << "Simulation Demo" << std::endl;
+namespace motion_planning {
 
-    // create sim scenario
-    std::cout << "creating sim scenario..." << std::endl;
-    auto sim_assets { helpers::generate_so101_brick_diagram(false, true) };
-    auto sim_builder { std::move(sim_assets.builder) };
-    auto& sim_plant { *(sim_assets.plant) };
-    auto sim_meshcat { sim_assets.meshcat };
-    auto& sim_diagram_builder { *(sim_assets.diagram_builder) };
-    std::cout << "sim scenario created." << std::endl;
+namespace detail {
 
+std::optional<BsplineTrajectory<double>> GenerateMotionPlanImpl(
+    SO101OMPL& sampling_planner,
+    SO101TrajOpt& trajopt,
+    const Eigen::VectorXd q_start,
+    const Eigen::VectorXd q_goal,
+    std::shared_ptr<SceneGraphCollisionChecker> checker
+) {
+    for (int i { 0 }; i < constants::TRAJOPT_N_RETRIES; ++i) {
+        std::cout << "motion plan iteration: " << i << std::endl;
+        // run sampling planner
+        std::cout << "running sampling planner..." << std::endl;
+        checker->SetPaddingAllRobotEnvironmentPairs(8e-3);
+        sampling_planner.set_pdef(q_start, q_goal);
+        auto sampling_planner_result { sampling_planner.solve() };
+        if (!sampling_planner_result) {
+            std::cout << "Sampling Planner Failure. Retrying..." << std::endl;
+            continue;
+        }
+        const auto waypoints { sampling_planner_result.value() };
+        std::cout << "sampling planner success, waypoints:" << std::endl;
+        std::cout << waypoints.transpose() << std::endl;
+    
+        // run trajopt
+        std::cout << "running trajectory optimization..." << std::endl;
+        checker->SetPaddingAllRobotEnvironmentPairs(1e-3);
+        trajopt.set_waypoints(waypoints);
+        std::cout << "solving..." << std::endl;
+        auto trajopt_result { trajopt.solve() };
+        if (!trajopt_result) {
+            std::cout << "TrajOpt Failure. Retrying..." << std::endl;
+            continue;
+        }
+        std::cout << "trajopt success." << std::endl;
+        return trajopt_result.value();
+    }
+    std::cout << "Unable to solve motion plan after " 
+              << constants::TRAJOPT_N_RETRIES << " retries. Exiting" << std::endl;
+    return std::nullopt;
+}
+
+} // namespace detail
+
+std::optional<BsplineTrajectory<double>> GenerateMotionPlan(
+    SO101InverseKinematics& ik,
+    SO101OMPL& sampling_planner,
+    SO101TrajOpt& trajopt,
+    const Eigen::VectorXd q_start,
+    std::shared_ptr<SceneGraphCollisionChecker> checker
+) {
+    // inverse kinematics
+    std::cout << "solving inverse kinematics..." << std::endl;
+    ik.set_initial_guess(q_start);
+    auto ik_result { ik.solve() };
+    if (!ik_result) {
+        std::cout << "IK Failure. Exiting..." << std::endl;
+        return std::nullopt;
+    }
+    const auto q_goal { ik_result.value() };
+    std::cout << "IK Success. Q Goal: " << q_goal.transpose() << std::endl;
+    
+    return detail::GenerateMotionPlanImpl(
+        sampling_planner, trajopt, q_start, q_goal, checker
+    );
+}
+
+std::optional<CompositeTrajectory<double>> GeneratePickPlaceMotionPlans() {
     // create plan scenario
     std::cout << "creating plan scenario..." << std::endl;
     auto plan_assets { helpers::generate_so101_brick_diagram(true, false) };
@@ -87,7 +141,7 @@ int main() {
     ) };
     if (!pick_result) {
         std::cout << "Pick Plan Failed. Exiting..." << std::endl;
-        return 1;
+        return std::nullopt;
     }
     const auto pick_trajectory { pick_result.value() };
 
@@ -129,7 +183,7 @@ int main() {
     ) };
     if (!place_result) {
         std::cout << "Place Plan Failed. Exiting..." << std::endl;
-        return 1;
+        return std::nullopt;
     }
     const auto place_trajectory { place_result.value() };
 
@@ -154,55 +208,18 @@ int main() {
     ) };
     if (!rest_result) {
         std::cout << "Rest Plan Failed. Exiting..." << std::endl;
-        return 1;
+        return std::nullopt;
     }
     const auto rest_trajectory { rest_result.value() };
     
     // construct composite trajectory
-    const auto trajectory {
-        CompositeTrajectory<double>::AlignAndConcatenate({
-            drake::copyable_unique_ptr<Trajectory<double>> { pick_trajectory },
-            drake::copyable_unique_ptr<Trajectory<double>> { gripper_close_trajectory },
-            drake::copyable_unique_ptr<Trajectory<double>> { place_trajectory },
-            drake::copyable_unique_ptr<Trajectory<double>> { gripper_open_trajectory },
-            drake::copyable_unique_ptr<Trajectory<double>> { rest_trajectory },
-        })
-    };
-
-    // add trajectory source to diagram
-    auto q_source {
-        sim_diagram_builder.AddSystem<TrajectorySource>(trajectory)
-    };
-    auto interpolator {
-        sim_diagram_builder.AddSystem<StateInterpolatorWithDiscreteDerivative>(
-            constants::SO101_NUM_Q,
-            sim_plant.time_step()
-        )
-    };
-    const auto& controller { 
-        sim_diagram_builder.GetSubsystemByName("so101_controller")
-    };
-    sim_diagram_builder.Connect(
-        q_source->get_output_port(),
-        interpolator->get_input_port()
-    );
-    sim_diagram_builder.Connect(
-        interpolator->get_output_port(),
-        controller.GetInputPort("desired_state")
-    );
-    
-    // build diagram
-    auto sim_diagram { sim_builder->Build() };
-    
-    // simulate
-    std::cout << "simulating..." << std::endl;
-    Simulator<double> simulator { *sim_diagram };
-    simulator.set_target_realtime_rate(1.0);
-    sim_meshcat->StartRecording();
-    simulator.AdvanceTo(trajectory.end_time());
-    sim_meshcat->StopRecording();
-    sim_meshcat->PublishRecording();
-    helpers::user_input_quit();
-
-    return 0;
+    return CompositeTrajectory<double>::AlignAndConcatenate({
+        drake::copyable_unique_ptr<Trajectory<double>> { pick_trajectory },
+        drake::copyable_unique_ptr<Trajectory<double>> { gripper_close_trajectory },
+        drake::copyable_unique_ptr<Trajectory<double>> { place_trajectory },
+        drake::copyable_unique_ptr<Trajectory<double>> { gripper_open_trajectory },
+        drake::copyable_unique_ptr<Trajectory<double>> { rest_trajectory },
+    });
 }
+
+} // namespace motion_planning

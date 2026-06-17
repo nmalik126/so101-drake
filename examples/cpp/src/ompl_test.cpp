@@ -1,4 +1,5 @@
 #include "helpers.h"
+#include "scenario_helpers.h"
 #include "planning/ompl_planning.h"
 #include "constants.h"
 

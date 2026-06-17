@@ -1,4 +1,5 @@
 #include "helpers.h"
+#include "scenario_helpers.h"
 #include "kinematics/inverse_kinematics.h"
 
 #include <iostream>
