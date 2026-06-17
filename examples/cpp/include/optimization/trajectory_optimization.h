@@ -3,10 +3,8 @@
 #include "constants.h"
 
 #include <drake/common/trajectories/bspline_trajectory.h>
-#include <drake/multibody/plant/multibody_plant.h>
 #include <drake/planning/robot_diagram.h>
 #include <drake/planning/trajectory_optimization/kinematic_trajectory_optimization.h>
-#include <drake/planning/collision_checker_params.h>
 #include <drake/planning/scene_graph_collision_checker.h>
 #include <drake/planning/collision_checker_context.h>
 
@@ -16,21 +14,13 @@
 #include <memory>
 
 using drake::trajectories::BsplineTrajectory;
-using drake::multibody::MultibodyPlant;
 using drake::planning::RobotDiagram;
 using drake::planning::trajectory_optimization::KinematicTrajectoryOptimization;
-using drake::planning::CollisionCheckerParams;
 using drake::planning::SceneGraphCollisionChecker;
 using drake::planning::CollisionCheckerContext;
 
 namespace motion_planning {
 namespace trajectory_optimization {
-
-std::optional<BsplineTrajectory<double>> GenerateTrajectory(
-    const MultibodyPlant<double>& plant,
-    std::shared_ptr<RobotDiagram<double>> diagram,
-    const Eigen::MatrixXd waypoints
-);
 
 class SO101TrajOpt final {
 public:

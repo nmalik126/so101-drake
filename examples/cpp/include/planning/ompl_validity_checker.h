@@ -24,11 +24,6 @@ namespace ob = ompl::base;
 class DrakeSO101ValidityChecker final : public ob::StateValidityChecker
 {
 public:
-    explicit DrakeSO101ValidityChecker(
-        const ob::SpaceInformationPtr& si,
-        std::shared_ptr<RobotDiagram<double>> diagram,
-        const double influence_distance = 5e0
-    );
 
     explicit DrakeSO101ValidityChecker(
         const ob::SpaceInformationPtr& si,
@@ -44,6 +39,7 @@ public:
     void set_start_state(ob::State* start_state) { start_state_ = start_state; }
 
 private:
+
     std::shared_ptr<SceneGraphCollisionChecker> checker_;
     std::shared_ptr<CollisionCheckerContext> context_;
     const BodyIndex gripper_link_index_;
@@ -51,4 +47,5 @@ private:
     const double influence_distance_;
     ob::State* start_state_;
     static constexpr int num_q_ { constants::SO101_NUM_Q };
+    
 };

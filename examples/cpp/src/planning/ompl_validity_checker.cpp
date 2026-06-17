@@ -29,28 +29,6 @@ namespace ob = ompl::base;
 DrakeSO101ValidityChecker::DrakeSO101ValidityChecker(
     const ob::SpaceInformationPtr& si,
     std::shared_ptr<RobotDiagram<double>> diagram,
-    const double influence_distance
-) : ob::StateValidityChecker(si)
-  , gripper_link_index_ { diagram->plant().GetBodyByName("gripper_link").index() }
-  , moving_jaw_index_ { diagram->plant().GetBodyByName("moving_jaw_so101_v1_link").index() }
-  , influence_distance_ { influence_distance }
-{
-    auto so101 { diagram->plant().GetModelInstanceByName("so101_new_calib") };
-    CollisionCheckerParams params {
-        .model { diagram },
-        .robot_model_instances { { so101 } },
-        .edge_step_size { 0.01 }
-    };
-
-    checker_ = std::make_unique<SceneGraphCollisionChecker>(params);
-    checker_->SetPaddingAllRobotEnvironmentPairs(8e-3);
-
-    context_ = checker_->MakeStandaloneModelContext();
-}
-
-DrakeSO101ValidityChecker::DrakeSO101ValidityChecker(
-    const ob::SpaceInformationPtr& si,
-    std::shared_ptr<RobotDiagram<double>> diagram,
     std::shared_ptr<SceneGraphCollisionChecker> checker,
     const double influence_distance
 ) : ob::StateValidityChecker(si)

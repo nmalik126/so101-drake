@@ -3,7 +3,6 @@
 #include "constants.h"
 #include "planning/ompl_validity_checker.h"
 
-#include <drake/multibody/plant/multibody_plant.h>
 #include <drake/planning/robot_diagram.h>
 #include <drake/planning/scene_graph_collision_checker.h>
 
@@ -17,7 +16,6 @@
 #include <optional>
 #include <memory>
 
-using drake::multibody::MultibodyPlant;
 using drake::planning::RobotDiagram;
 using drake::planning::SceneGraphCollisionChecker;
 
@@ -26,44 +24,12 @@ namespace ob = ompl::base;
 namespace motion_planning {
 namespace ompl {
 
-namespace detail {
-
-    std::optional<Eigen::MatrixXd> GenerateWaypointsImpl(
-        const MultibodyPlant<double>& plant,
-        std::shared_ptr<RobotDiagram<double>> diagram,
-        const Eigen::VectorXd q_start,
-        const Eigen::VectorXd q_goal
-    );
-
-} // namespace detail
-
-inline std::optional<Eigen::MatrixXd> GenerateWaypoints(
-    const MultibodyPlant<double>& plant,
-    std::shared_ptr<RobotDiagram<double>> diagram,
-    const Eigen::VectorXd q_goal
-) {
-    auto context { diagram->CreateDefaultContext() };
-    const auto& fixed_plant_context { plant.GetMyContextFromRoot(*context) };
-    const auto q_start { plant.GetPositions(fixed_plant_context) };
-
-    return detail::GenerateWaypointsImpl(plant, diagram, q_start, q_goal);
-}
-
-inline std::optional<Eigen::MatrixXd> GenerateWaypoints(
-    const MultibodyPlant<double>& plant,
-    std::shared_ptr<RobotDiagram<double>> diagram,
-    const Eigen::VectorXd q_start,
-    const Eigen::VectorXd q_goal
-) {
-    return detail::GenerateWaypointsImpl(plant, diagram, q_start, q_goal);
-}
-
 class SO101OMPL final {
 public:
 
     explicit SO101OMPL(
         std::shared_ptr<RobotDiagram<double>> diagram,
-        std::shared_ptr<SceneGraphCollisionChecker> checker = nullptr
+        std::shared_ptr<SceneGraphCollisionChecker> checker
     );
 
     SO101OMPL(const SO101OMPL&) = delete;
