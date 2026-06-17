@@ -34,9 +34,9 @@ The following example programs are available under `src/`:
 
 - `trajopt_test` - Runs Kinematic Trajectory Optimization given a sample start and goal configuration and an initial guess motion plan (waypoints). Visualizes the resulting optimal collision-free motion plan.
 
-- `classic_motion_planning` - Runs Inverse Kinematics, RRT-Connect, and Kinematic Trajectory Optimization in sequence given a sample grasp goal. Visualizes the resulting optimal collision-free motion plan.
+- `motion_planning_test` - Runs Inverse Kinematics, RRT-Connect, and Kinematic Trajectory Optimization in sequence given a sample grasp goal. Visualizes the resulting optimal collision-free motion plan.
 
-- `simulation` - Generates three motion plans (for pick, place, and stow) according to `classic_motion_planning` for a sample bin-picking task. Simulates the result. 
+- `simulation_demo` - Generates three motion plans (for pick, place, and stow) according to `motion_planning_test` for a sample bin-picking task. Simulates the result. 
 
 - `hardware_test` - Sends commands to the SO101 hardware to open and close its gripper from its rest configuration. Visualizes the digital-twin in real time.
 
