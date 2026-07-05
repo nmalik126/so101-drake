@@ -45,6 +45,13 @@ target_link_libraries(trajopt_test
         optimization
 )
 
+add_executable(gcs_test gcs_test.cpp)
+target_link_libraries(gcs_test
+    PRIVATE
+        helpers
+        optimization
+)
+
 add_executable(motion_planning_test motion_planning_test.cpp)
 target_link_libraries(motion_planning_test
     PRIVATE
