@@ -5,6 +5,7 @@
 #include <drake/planning/robot_diagram.h>
 #include <drake/multibody/inverse_kinematics/inverse_kinematics.h>
 #include <drake/systems/framework/context.h>
+#include <drake/math/rigid_transform.h>
 
 #include <Eigen/Dense>
 
@@ -14,6 +15,7 @@
 using drake::planning::RobotDiagram;
 using drake::multibody::InverseKinematics;
 using drake::systems::Context;
+using drake::math::RigidTransformd;
 
 namespace motion_planning {
 namespace inverse_kinematics {
@@ -60,7 +62,7 @@ public:
         add_constraints();
     }
 
-protected:
+private:
 
     void add_constraints() override;
 
@@ -76,9 +78,29 @@ public:
         add_constraints();
     }
 
-protected:
+private:
 
     void add_constraints() override;
+
+};
+
+class SO101InverseKinematicsRandPick final : public SO101InverseKinematics {
+public:
+
+    explicit SO101InverseKinematicsRandPick(
+        std::shared_ptr<RobotDiagram<double>> diagram,
+        const RigidTransformd grasp_transform
+    ) : SO101InverseKinematics { diagram }
+      , grasp_transform { grasp_transform }
+    {
+        add_constraints();
+    }
+
+private:
+
+    void add_constraints() override;
+
+    const RigidTransformd grasp_transform;
 
 };
     

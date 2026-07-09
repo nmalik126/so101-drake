@@ -196,9 +196,147 @@ void generate_so101_brick(
     );
 }
 
+void generate_so101_binpick(
+    MultibodyPlant<double>& plant,
+    SceneGraph<double>& scene_graph,
+    Parser& parser,
+    DiagramBuilder<double>& diagram_builder
+) {
+    // add control plant
+    auto control_plant {
+        std::make_unique<MultibodyPlant<double>>(plant.time_step())
+    };
+    Parser ctrl_parser { control_plant.get() };
+
+    // add mat
+    auto mat = parser.AddModels(constants::model_paths::MAT)[0];
+    auto ctrl_mat = ctrl_parser.AddModels(constants::model_paths::MAT)[0];
+    plant.WeldFrames(
+        plant.world_frame(),
+        plant.GetFrameByName("mat_link", mat)
+    );
+    control_plant->WeldFrames(
+        control_plant->world_frame(),
+        control_plant->GetFrameByName("mat_link", ctrl_mat)
+    );
+
+    // add so101
+    auto so101 = parser.AddModels(constants::model_paths::SO101)[0];
+    auto ctrl_so101 = ctrl_parser.AddModels(constants::model_paths::SO101)[0];
+    const drake::Vector3<double> T_mat_so101 { constants::transforms::X_MAT_SO101::T };
+    const drake::Vector3<double> rpy_mat_so101 { constants::transforms::X_MAT_SO101::R };
+    const RollPitchYaw R_mat_so101 { rpy_mat_so101 };
+    const RigidTransform X_mat_so101 { R_mat_so101, T_mat_so101 };
+    plant.WeldFrames(
+        plant.GetFrameByName("mat_link", mat),
+        plant.GetFrameByName("base_link", so101),
+        X_mat_so101
+    );
+    control_plant->WeldFrames(
+        control_plant->GetFrameByName("mat_link", ctrl_mat),
+        control_plant->GetFrameByName("base_link", ctrl_so101),
+        X_mat_so101
+    );
+
+    // add bin
+    auto bin = parser.AddModels(constants::model_paths::BIN_LARGE)[0];
+    const drake::Vector3<double> T_mat_bin { constants::transforms::X_MAT_BIN::T };
+    const drake::Vector3<double> rpy_mat_bin { constants::transforms::X_MAT_BIN::R };
+    const RollPitchYaw R_mat_bin { rpy_mat_bin };
+    const RigidTransform X_mat_bin { R_mat_bin, T_mat_bin };
+    plant.WeldFrames(
+        plant.GetFrameByName("mat_link", mat),
+        plant.GetFrameByName("bin_link", bin),
+        X_mat_bin
+    );
+
+    // finalize plants
+    plant.Finalize();
+    control_plant->Finalize();
+
+    // set so101 default positions
+    const Eigen::VectorXd q_init { 
+        Eigen::VectorXd::Map(
+            constants::SO101_Q_INIT, 
+            constants::SO101_NUM_Q
+        ) 
+    };
+    plant.SetDefaultPositions(so101, q_init);
+    control_plant->SetDefaultPositions(ctrl_so101, q_init);
+
+    // add so101 controller
+    const auto kp { Eigen::VectorXd::Ones(constants::SO101_NUM_Q) * 100 };
+    const auto ki { Eigen::VectorXd::Ones(constants::SO101_NUM_Q) * 1 };
+    const auto kd { Eigen::VectorXd::Ones(constants::SO101_NUM_Q) * 20 };
+    auto controller { 
+        diagram_builder.AddSystem<InverseDynamicsController>(
+            std::move(control_plant), kp, ki, kd, false
+        )
+    };
+    controller->set_name("so101_controller");
+    diagram_builder.Connect(
+        plant.get_state_output_port(so101),
+        controller->get_input_port_estimated_state()
+    );
+    diagram_builder.Connect(
+        controller->get_output_port_control(),
+        plant.get_actuation_input_port()
+    );
+}
+
+void generate_so101_binpick_welded(
+    MultibodyPlant<double>& plant,
+    SceneGraph<double>& scene_graph,
+    Parser& parser
+) {
+    // add mat
+    auto mat = parser.AddModels(constants::model_paths::MAT)[0];
+    plant.WeldFrames(
+        plant.world_frame(),
+        plant.GetFrameByName("mat_link", mat)
+    );
+
+    // add so101
+    auto so101 = parser.AddModels(constants::model_paths::SO101)[0];
+    const drake::Vector3<double> T_mat_so101 { constants::transforms::X_MAT_SO101::T };
+    const drake::Vector3<double> rpy_mat_so101 { constants::transforms::X_MAT_SO101::R };
+    const RollPitchYaw R_mat_so101 { rpy_mat_so101 };
+    const RigidTransform X_mat_so101 { R_mat_so101, T_mat_so101 };
+    plant.WeldFrames(
+        plant.GetFrameByName("mat_link", mat),
+        plant.GetFrameByName("base_link", so101),
+        X_mat_so101
+    );
+
+    // add bin
+    auto bin = parser.AddModels(constants::model_paths::BIN_LARGE)[0];
+    const drake::Vector3<double> T_mat_bin { constants::transforms::X_MAT_BIN::T };
+    const drake::Vector3<double> rpy_mat_bin { constants::transforms::X_MAT_BIN::R };
+    const RollPitchYaw R_mat_bin { rpy_mat_bin };
+    const RigidTransform X_mat_bin { R_mat_bin, T_mat_bin };
+    plant.WeldFrames(
+        plant.GetFrameByName("mat_link", mat),
+        plant.GetFrameByName("bin_link", bin),
+        X_mat_bin
+    );
+
+    // finalize plant
+    plant.Finalize();
+
+    // set so101 default positions
+    const Eigen::VectorXd q_init { 
+        Eigen::VectorXd::Map(
+            constants::SO101_Q_INIT, 
+            constants::SO101_NUM_Q
+        ) 
+    };
+    plant.SetDefaultPositions(so101, q_init);
+}
+
 ScenarioAssets generate_so101_brick_diagram(
     bool welded,
-    bool visualize
+    bool visualize,
+    bool bin_pick
 ) {
     // init builder
     // RobotDiagramBuilder<double> builder {};
@@ -216,9 +354,15 @@ ScenarioAssets generate_so101_brick_diagram(
 
     // init scenario
     if (welded)
-        generate_so101_brick_welded(plant, scene_graph, parser);
+        if (bin_pick)
+            generate_so101_binpick_welded(plant, scene_graph, parser);
+        else
+            generate_so101_brick_welded(plant, scene_graph, parser);
     else
-        generate_so101_brick(plant, scene_graph, parser, diagram_builder);
+        if (bin_pick)
+            generate_so101_binpick(plant, scene_graph, parser, diagram_builder);
+        else
+            generate_so101_brick(plant, scene_graph, parser, diagram_builder);
 
     // init meshcat
     if (visualize) {

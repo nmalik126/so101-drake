@@ -11,10 +11,12 @@ namespace constants {
 
         inline constexpr std::string_view SO101 { "/home/noor/SO-ARM100/Simulation/SO101/so101_new_calib_urdf_drake_hydro.urdf" };
         inline constexpr std::string_view SO101_OBJ { "/home/noor/SO-ARM100/Simulation/SO101/so101_object.urdf" };
+        inline constexpr std::string_view SO101_GRIPPER { "/home/noor/SO-ARM100/Simulation/SO101/so101_gripper.urdf" };
         inline constexpr std::string_view MAT { "/home/noor/SO-ARM100/Simulation/assets/mat.sdf" };
         inline constexpr std::string_view BOX { "/home/noor/SO-ARM100/Simulation/assets/box.sdf" };
         inline constexpr std::string_view BIN { "/home/noor/SO-ARM100/Simulation/assets/bin_small.sdf" };
         inline constexpr std::string_view BIN_CLR { "/home/noor/SO-ARM100/Simulation/assets/bin_small_clearance.sdf" };
+        inline constexpr std::string_view BIN_LARGE { "/home/noor/SO-ARM100/Simulation/assets/bin_large_clearance.sdf" };
 
     } // namespace model_paths
 
@@ -53,6 +55,7 @@ namespace constants {
 
     inline constexpr int SO101_NUM_Q { 6 };
     inline constexpr double SO101_Q_INIT[SO101_NUM_Q] { 0, -1.822, 1.55, 0.906, 0, 0 };
+    inline constexpr double SO101_Q_PLACE[SO101_NUM_Q] { 0.623759, -0.181206, 0.06109, 1.6909, -0.898355, 0 };
 
     inline constexpr int TRAJOPT_N_WAYPOINTS { 8 };
     inline constexpr int TRAJOPT_N_RETRIES { 10 };

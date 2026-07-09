@@ -14,6 +14,7 @@
 #include <drake/planning/scene_graph_collision_checker.h>
 #include <drake/planning/collision_checker_params.h>
 #include <drake/math/rigid_transform.h>
+#include <drake/math/rotation_matrix.h>
 
 #include <Eigen/Dense>
 
@@ -22,6 +23,7 @@
 
 using motion_planning::inverse_kinematics::SO101InverseKinematics;
 using motion_planning::inverse_kinematics::SO101InverseKinematicsPick;
+using motion_planning::inverse_kinematics::SO101InverseKinematicsRandPick;
 using motion_planning::inverse_kinematics::SO101InverseKinematicsPlace;
 using motion_planning::ompl::SO101OMPL;
 using motion_planning::trajectory_optimization::SO101TrajOpt;
@@ -32,6 +34,7 @@ using drake::trajectories::PiecewisePolynomial;
 using drake::planning::SceneGraphCollisionChecker;
 using drake::planning::CollisionCheckerParams;
 using drake::math::RigidTransformd;
+using drake::math::RotationMatrixd;
 
 namespace motion_planning {
 
@@ -220,6 +223,159 @@ std::optional<CompositeTrajectory<double>> GeneratePickPlaceMotionPlans() {
         drake::copyable_unique_ptr<Trajectory<double>> { gripper_open_trajectory },
         drake::copyable_unique_ptr<Trajectory<double>> { rest_trajectory },
     });
+}
+
+std::optional<CompositeTrajectory<double>> GenerateBinpickMotionPlans(
+    const RigidTransformd grasp_transform,
+    const MultibodyPlant<double>& plan_plant,
+    std::shared_ptr<RobotDiagram<double>> plan_diagram,
+    std::shared_ptr<SceneGraphCollisionChecker> checker,
+    const Eigen::VectorXd q_start,
+    bool return_home
+) {
+    // create motion planning objects
+    SO101InverseKinematicsRandPick ik_pick { plan_diagram, grasp_transform };
+    const Eigen::VectorXd q_place { 
+        Eigen::VectorXd::Map(
+            constants::SO101_Q_PLACE, 
+            constants::SO101_NUM_Q
+        ) 
+    };
+    SO101OMPL sampling_planner { plan_diagram, checker };
+    SO101TrajOpt trajopt { plan_diagram, checker };
+
+    // add brick
+    const RigidTransformd box_transform {
+        RotationMatrixd::MakeZRotation(pi/2),
+        Eigen::Vector3d { 0.015, 0, -0.1 }
+    };
+    const auto& mat_body { plan_plant.GetBodyByName("mat_link") };
+    checker->AddCollisionShapeToBody(
+        "grasped_box",
+        mat_body,
+        drake::geometry::Box(0.04, 0.03, 0.03),
+        grasp_transform * box_transform
+    );
+
+    // solve pick plan
+    std::cout << "solving pick plan..." << std::endl;
+    auto pick_result { motion_planning::GenerateMotionPlan(
+        ik_pick, sampling_planner, trajopt, q_start, checker
+    ) };
+    if (!pick_result) {
+        std::cout << "Pick Plan Failed. Exiting..." << std::endl;
+        return std::nullopt;
+    }
+    const auto pick_trajectory { pick_result.value() };
+
+    // remove brick
+    checker->RemoveAllAddedCollisionShapes("grasped_box");
+
+    // compute gripper close trajectory
+    const Eigen::VectorXd q_pick_open { pick_trajectory.FinalValue() };
+    Eigen::VectorXd q_pick_closed { q_pick_open };
+    q_pick_closed(constants::SO101_NUM_Q - 1) = -0.1;
+    const auto gripper_close_trajectory {
+        PiecewisePolynomial<double>::FirstOrderHold(
+            { 0.0, 1.0 },
+            { q_pick_open, q_pick_closed }
+        )
+    };
+    
+    // solve place plan
+    std::cout << "solving place plan..." << std::endl;
+    auto place_result { motion_planning::GenerateMotionPlan(
+        sampling_planner, trajopt, q_pick_closed, q_place, checker
+    ) };
+    if (!place_result) {
+        std::cout << "Place Plan Failed. Exiting..." << std::endl;
+        return std::nullopt;
+    }
+    const auto place_trajectory { place_result.value() };
+
+    // compute gripper open trajectory
+    const Eigen::VectorXd q_place_closed { place_trajectory.FinalValue() };
+    Eigen::VectorXd q_place_open { q_place_closed };
+    q_place_open(constants::SO101_NUM_Q - 1) = 0.5;
+    const auto gripper_open_trajectory {
+        PiecewisePolynomial<double>::FirstOrderHold(
+            { 0.0, 1.0 },
+            { q_place_closed, q_place_open }
+        )
+    };
+
+    if (return_home) {
+        // solve rest plan
+        std::cout << "solving rest plan..." << std::endl;
+        const Eigen::VectorXd q_init { 
+            Eigen::VectorXd::Map(
+                constants::SO101_Q_INIT, constants::SO101_NUM_Q
+            ) 
+        };
+        auto rest_result { motion_planning::GenerateMotionPlan(
+            sampling_planner, trajopt, q_place_open, q_init, checker
+        ) };
+        if (!rest_result) {
+            std::cout << "Rest Plan Failed. Exiting..." << std::endl;
+            return std::nullopt;
+        }
+        const auto rest_trajectory { rest_result.value() };
+        
+        // construct composite trajectory
+        return CompositeTrajectory<double>::AlignAndConcatenate({
+            drake::copyable_unique_ptr<Trajectory<double>> { pick_trajectory },
+            drake::copyable_unique_ptr<Trajectory<double>> { gripper_close_trajectory },
+            drake::copyable_unique_ptr<Trajectory<double>> { place_trajectory },
+            drake::copyable_unique_ptr<Trajectory<double>> { gripper_open_trajectory },
+            drake::copyable_unique_ptr<Trajectory<double>> { rest_trajectory },
+        });
+    }
+    else
+        return CompositeTrajectory<double>::AlignAndConcatenate({
+            drake::copyable_unique_ptr<Trajectory<double>> { pick_trajectory },
+            drake::copyable_unique_ptr<Trajectory<double>> { gripper_close_trajectory },
+            drake::copyable_unique_ptr<Trajectory<double>> { place_trajectory },
+            drake::copyable_unique_ptr<Trajectory<double>> { gripper_open_trajectory }
+        });
+}
+
+MutableTrajectorySource::MutableTrajectorySource(int num_positions)
+    : num_positions_(num_positions) {
+
+    DeclareVectorOutputPort(
+        "q",
+        BasicVector<double>(num_positions_),
+        &MutableTrajectorySource::CalcOutput);
+}
+
+void MutableTrajectorySource::SetTrajectory(
+    std::unique_ptr<Trajectory<double>> trajectory,
+    double simulator_time) {
+
+    trajectory_ = std::move(trajectory);
+    trajectory_start_time_ = simulator_time;
+}
+
+void MutableTrajectorySource::CalcOutput(
+    const Context<double>& context,
+    BasicVector<double>* output
+) const {
+
+    if (!trajectory_) {
+        output->SetFromVector(Eigen::VectorXd::Zero(num_positions_));
+        return;
+    }
+
+    double local_time =
+        context.get_time() - trajectory_start_time_;
+
+    local_time = std::clamp(
+        local_time,
+        trajectory_->start_time(),
+        trajectory_->end_time());
+
+    output->SetFromVector(
+        trajectory_->value(local_time));
 }
 
 } // namespace motion_planning

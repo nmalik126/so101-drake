@@ -24,6 +24,13 @@ target_link_libraries(helpers
 add_executable(visualizer visualizer.cpp)
 target_link_libraries(visualizer drake::drake)
 
+add_executable(gripper_visualizer gripper_visualizer.cpp)
+target_link_libraries(gripper_visualizer
+    PRIVATE 
+        helpers
+        kinematics
+)
+
 add_executable(ik_test ik_test.cpp)
 target_link_libraries(ik_test
     PRIVATE
@@ -49,6 +56,16 @@ add_executable(gcs_test gcs_test.cpp)
 target_link_libraries(gcs_test
     PRIVATE
         helpers
+        optimization
+)
+
+add_executable(grasp_test grasp_test.cpp)
+target_link_libraries(grasp_test
+    PRIVATE
+        helpers
+        hardware
+        kinematics
+        planning
         optimization
 )
 
@@ -82,6 +99,25 @@ target_link_libraries(hardware_demo
     PRIVATE
         helpers
         hardware
+        kinematics
+        planning
+        optimization
+)
+
+add_executable(binpick_demo binpick_demo.cpp)
+target_link_libraries(binpick_demo
+    PRIVATE
+        helpers
+        hardware
+        kinematics
+        planning
+        optimization
+)
+
+add_executable(binpick_sim binpick_sim.cpp)
+target_link_libraries(binpick_sim
+    PRIVATE
+        helpers
         kinematics
         planning
         optimization

@@ -7,6 +7,7 @@
 #include <drake/solvers/solve.h>
 #include <drake/math/rigid_transform.h>
 #include <drake/math/roll_pitch_yaw.h>
+#include <drake/math/rotation_matrix.h>
 
 #include <Eigen/Dense>
 
@@ -19,6 +20,7 @@ using drake::multibody::InverseKinematics;
 using drake::solvers::Solve;
 using drake::math::RigidTransform;
 using drake::math::RollPitchYaw;
+using drake::math::RotationMatrix;
 
 using std::numbers::pi;
 
@@ -96,8 +98,8 @@ void SO101InverseKinematicsPlace::add_constraints() {
     const RigidTransform X_mat_boxgoal { R_mat_boxgoal, T_mat_boxgoal };
     ik_->AddPositionConstraint(
         gripper_frame,
-        Eigen::Vector3d { { 0.015, 0, -0.12 } },
-        // Eigen::Vector3d { { 0, 0, -0.15 } },
+        // Eigen::Vector3d { { 0.015, 0, -0.12 } },
+        Eigen::Vector3d { { 0, 0, -0.18 } },
         plant.world_frame(),
         T_mat_boxgoal,
         T_mat_boxgoal
@@ -109,7 +111,33 @@ void SO101InverseKinematicsPlace::add_constraints() {
         {},
         0.0
     );
-    ik_->AddMinimumDistanceLowerBoundConstraint(8e-3, 1e-1);
+    // ik_->AddMinimumDistanceLowerBoundConstraint(8e-3, 1e-1);
+}
+
+void SO101InverseKinematicsRandPick::add_constraints() {
+    // get frames
+    const auto& plant { diagram_->plant() };
+    auto so101 { plant.GetModelInstanceByName("so101_new_calib") };
+    const auto& gripper_frame { plant.GetFrameByName("gripper_link", so101) };
+
+    // set constraints
+    ik_->AddPositionConstraint(
+        gripper_frame,
+        Eigen::Vector3d { { 0, 0, 0 } },
+        plant.world_frame(),
+        grasp_transform.translation(),
+        grasp_transform.translation()
+    );
+    ik_->AddOrientationConstraint(
+        gripper_frame,
+        {},
+        plant.world_frame(),
+        grasp_transform.rotation(),
+        pi/16
+    );
+    auto* prog { ik_->get_mutable_prog() };
+    const auto& q { ik_->q() };
+    prog->AddBoundingBoxConstraint(pi/4, pi/4, q(5, 0));
 }
 
 } // namespace inverse_kinematics

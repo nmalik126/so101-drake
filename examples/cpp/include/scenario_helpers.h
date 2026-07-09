@@ -84,6 +84,12 @@ inline void generate_so101_brick_welded(
     detail::generate_so101_brick_welded_impl(plant, scene_graph, parser, q_init);
 }
 
+void generate_so101_binpick_welded(
+    MultibodyPlant<double>& plant,
+    SceneGraph<double>& scene_graph,
+    Parser& parser
+);
+
 struct ScenarioAssets {
     std::unique_ptr<RobotDiagramBuilder<double>> builder {};
     MultibodyPlant<double>* plant {};
@@ -95,7 +101,8 @@ struct ScenarioAssets {
 
 ScenarioAssets generate_so101_brick_diagram(
     bool welded,
-    bool visualize
+    bool visualize,
+    bool bin_pick = false
 );
     
 } // namespace helpers
