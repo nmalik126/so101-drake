@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="surface">
+    <link name="surface_link">
+
+      <visual name="surface_visual">
+        <geometry>
+          <mesh>
+            <uri>/home/noor/so101-drake/assets/mesh.obj</uri>
+          </mesh>
+        </geometry>
+      </visual>
+
+      <collision name="surface_collision">
+        <geometry>
+          <mesh>
+            <uri>/home/noor/so101-drake/assets/mesh.obj</uri>
+          </mesh>
+        </geometry>
+
+        <drake:proximity_properties>
+          <drake:rigid_hydroelastic/>
+          <drake:mu_static>0.8</drake:mu_static>
+          <drake:mu_dynamic>0.6</drake:mu_dynamic>
+        </drake:proximity_properties>
+      </collision>
+
+    </link>
+  </model>
+</sdf>
