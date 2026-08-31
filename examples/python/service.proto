@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package so101;
+
+service Update {
+    rpc GetImage (Request) returns (Response);
+}
+
+message Request {
+    string id = 1;
+}
+
+message Response {
+    string id = 1;
+    bool success = 2;
+}
