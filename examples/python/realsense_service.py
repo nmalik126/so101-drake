@@ -100,7 +100,7 @@ class RealsenseProcessor:
 
 class UpdateServicer(service_pb2_grpc.UpdateServicer):
 
-    def GetImage(cls, request, context):
+    def GetImage(self, request, context):
         success = RealsenseProcessor.get_image()
         return service_pb2.Response(
             id=request.id,
@@ -111,7 +111,7 @@ class UpdateServicer(service_pb2_grpc.UpdateServicer):
 def serve():
     server = grpc.server(ThreadPoolExecutor(max_workers=10))
     service_pb2_grpc.add_UpdateServicer_to_server(
-        UpdateServicer, server
+        UpdateServicer(), server
     )
     server.add_insecure_port("127.0.0.1:50051")
     server.start()
