@@ -388,11 +388,11 @@
             <material name="3d_printed"/>
         </visual>
         <collision>
-            <origin xyz="8.32667e-17 -0.000218214 0.000949706" rpy="-3.14159 -5.55112e-17 0"/>
-            <!-- <origin xyz="-0.02 0 -0.055" rpy="-3.14159 0 0"/> -->
+            <!-- <origin xyz="8.32667e-17 -0.000218214 0.000949706" rpy="-3.14159 -5.55112e-17 0"/> -->
+            <origin xyz="-0.02 0 -0.055" rpy="-3.14159 0 0"/>
             <geometry>
-                <mesh filename="assets/wrist_roll_follower_so101_v1_from_stl.obj"/>
-                <!-- <box size="0.025 0.025 0.1"/> -->
+                <!-- <mesh filename="assets/wrist_roll_follower_so101_v1_from_stl.obj"/> -->
+                <box size="0.025 0.025 0.1"/>
             </geometry>
             <drake:proximity_properties>
                 <drake:rigid_hydroelastic/>
