@@ -5,6 +5,8 @@ from pathlib import Path
 from scipy.spatial.transform import Rotation
 import open3d as o3d
 import time
+from concurrent.futures import ProcessPoolExecutor
+import pickle
 
 from pydrake.all import (
     RobotDiagramBuilder,
@@ -23,6 +25,9 @@ from pydrake.all import (
     PointCloud,
     Fields,
     BaseField,
+    PiecewisePolynomial,
+    CompositeTrajectory,
+    BsplineTrajectory
 )
 from manipulation.meshcat_utils import PublishPositionTrajectory
 
@@ -134,23 +139,80 @@ def main():
     if (q_place is None) or (q_pick is None):
         print("IK failed")
         return
-    print(q_pick)
-    print(q_place)
 
-    waypoints = SO101SamplingPlanner.generate_path(diagram, q_pick, q_place)
-    if waypoints is None:
-        print("OMPL planning failed")
-        return
+    q_ready = np.array([0, 0, 0, 1.5, 0, np.pi/4], dtype=np.float64)
+    rest_to_ready_traj = PiecewisePolynomial.CubicShapePreserving(
+        [0.0, 3.0], 
+        np.vstack([q_rest, q_ready]).T,
+        True
+    )
+    ready_to_rest_traj = PiecewisePolynomial.CubicShapePreserving(
+        [0.0, 3.0], 
+        np.vstack([q_ready, q_rest]).T,
+        True
+    )
 
-    waypoints_trunc = np.hstack((waypoints[:, :5], waypoints[:, -3:]))
-    trajectory = SO101SamplingPlanner.generate_trajectory(plant, diagram, waypoints_trunc)
-    if trajectory is None:
-        print("TrajOpt failure")
-        return
+    endpoints = [
+        (q_ready, q_pick),
+        (q_pick, q_place),
+        (q_place, q_ready),
+    ]
+
+    trajectories = [rest_to_ready_traj]
+
+    for q_start, q_goal in endpoints:
+        print("OMPL planning...")
+        waypoints = SO101SamplingPlanner.generate_path(diagram, q_start, q_goal)
+        if waypoints is None:
+            print("OMPL planning failed")
+            return
+
+        print("TrajOpt...")
+        waypoints_trunc = np.hstack((waypoints[:, :5], waypoints[:, -3:]))
+        trajectory = SO101SamplingPlanner.generate_trajectory(plant, diagram, waypoints_trunc)
+        if trajectory is None:
+            print("TrajOpt failure")
+            return
+
+        trajectories.append(trajectory)
+
+    q_pick_closed = q_pick.copy()
+    q_pick_closed[5] = -0.1
+    close_traj = PiecewisePolynomial.CubicShapePreserving(
+        [0.0, 1.0],
+        np.vstack([q_pick, q_pick_closed]).T,
+        True
+    )
+
+    q_place_closed = q_place.copy()
+    q_place_closed[5] = -0.1
+    open_traj = PiecewisePolynomial.CubicShapePreserving(
+        [0.0, 1.0],
+        np.vstack([q_place_closed, q_place]).T,
+        True
+    )
+
+    control_pts = [
+        control_pt.copy() for control_pt in trajectories[2].control_points()
+    ]
+    for control_pt in control_pts:
+        control_pt[5, 0] = -0.1
+    trajectories[2] = BsplineTrajectory(
+        trajectories[2].basis(), control_pts
+    )
+
+    trajectories.insert(2, close_traj)
+    trajectories.insert(4, open_traj)
+
+    trajectories.append(ready_to_rest_traj)
+    full_traj = CompositeTrajectory.AlignAndConcatenate(trajectories)
+
+    with open(project_dir / "assets" / "example_full_traj.pkl", "wb") as f:
+        pickle.dump(full_traj, f)
 
     meshcat.Flush()
     context = diagram.CreateDefaultContext()
-    PublishPositionTrajectory(trajectory, context, plant, visualizer)
+    PublishPositionTrajectory(full_traj, context, plant, visualizer)
     collision_visualizer.ForcedPublish(collision_visualizer.GetMyContextFromRoot(context))
     time.sleep(5.0)
 

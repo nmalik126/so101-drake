@@ -22,6 +22,7 @@ class DrakeStateValidityChecker(ob.StateValidityChecker):
         diagram: RobotDiagram,
         robot_model: ModelInstanceIndex,
         num_q: int,
+        q_start: np.ndarray
     ):
         super().__init__(si)
 
@@ -35,12 +36,15 @@ class DrakeStateValidityChecker(ob.StateValidityChecker):
 
         self.num_q = num_q
         self.influence_distance = 1e0
+        self.q_start = q_start
 
     def _stateToVector(self, state: ob.State) -> np.ndarray[np.float64]:
         return np.array([state[i] for i in range(self.num_q)], dtype=np.float64)
 
     def isValid(self, state):
         q = self._stateToVector(state)
+        if np.allclose(q, self.q_start):
+            return True
         return self.collision_checker.CheckContextConfigCollisionFree(
             self.context, q
         )
@@ -74,7 +78,7 @@ class SO101SamplingPlanner:
 
         si = ob.SpaceInformation(space)
         validityChecker = DrakeStateValidityChecker(
-            si, diagram, so101, num_q
+            si, diagram, so101, num_q, q_start
         )
         si.setStateValidityChecker(validityChecker)
         si.setup()

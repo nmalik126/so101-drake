@@ -14,7 +14,7 @@ class SO101InverseKinematics:
     def solve_ik_place(cls, plant: MultibodyPlant):
         grasp = np.eye(4)
         grasp[:3, :3] = Rotation.from_rotvec([0, 0, np.pi/2]).as_matrix()
-        grasp[:3, 3] = [0.13, 0.0, 0.2]
+        grasp[:3, 3] = [0.11, -0.01, 0.25]
 
         # initial guess
         ik = InverseKinematics(plant)
@@ -36,7 +36,7 @@ class SO101InverseKinematics:
             RotationMatrix(),
             plant.world_frame(),
             RotationMatrix(grasp[:3, :3]),
-            np.pi/16
+            np.pi/8
         )
         ik.get_mutable_prog().AddBoundingBoxConstraint(
             np.pi/4, np.pi/4, ik.q()[5]
@@ -63,8 +63,8 @@ class SO101InverseKinematics:
             plant.GetFrameByName("gripper_link", so101),
             [0.0, 0.0, 0.0],
             plant.world_frame(),
-            grasp[:3, 3] + np.array([-0.015, 0.01, 0]),
-            grasp[:3, 3] + np.array([-0.015, 0.01, 0])
+            grasp[:3, 3] + np.array([-0.015, 0.01, -0.005]),
+            grasp[:3, 3] + np.array([-0.015, 0.01, -0.005])
         )
         ik.AddOrientationConstraint(
             plant.GetFrameByName("gripper_link", so101),
