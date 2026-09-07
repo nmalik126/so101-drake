@@ -157,6 +157,11 @@ class MotionPlanner:
             for waypoint, s in waypoints:
                 trajopt.AddPathPositionConstraint(lb=waypoint, ub=waypoint, s=s)
 
+        trajopt.AddPathVelocityConstraint(np.zeros((6, 1)), np.zeros((6, 1)), 0)
+        trajopt.AddPathVelocityConstraint(np.zeros((6, 1)), np.zeros((6, 1)), 1)
+        # trajopt.AddPathAccelerationConstraint(np.zeros((6, 1)), np.zeros((6, 1)), 0)
+        # trajopt.AddPathAccelerationConstraint(np.zeros((6, 1)), np.zeros((6, 1)), 1)
+
         evaluate_at_s = np.linspace(collision_begin, collision_end, 25)
         for s in evaluate_at_s:
             trajopt.AddPathPositionConstraint(self.collision_constraint, s)
