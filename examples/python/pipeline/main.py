@@ -136,84 +136,80 @@ def main():
     )
 
     try:
-        imagePair = get_image()
-        if imagePair is None:
-            logging.warning("image request unsuccessful")
-            return
-        logging.info("image request successful")
+        execute_plan(rest_to_ready_traj)
+        prev_return_traj = None
+        q_start = q_ready
 
-        grasp = get_grasp(imagePair)
-        if grasp is None:
-            logging.warning("grasp request unsuccessful")
-            return
-        logging.info("grasp request successful")
+        while True:
+            imagePair = get_image()
+            if imagePair is None:
+                logging.warning("image request unsuccessful")
+                if prev_return_traj is not None:
+                    execute_plan(prev_return_traj)
+                    prev_return_traj = None
+                break
+            logging.info("image request successful")
 
-        plan = get_plan(grasp, q_ready)
-        if plan is None:
-            logging.warning("motion plan unsuccessful")
-        logging.info("motion plan successful")
+            grasp = get_grasp(imagePair)
+            if grasp is None:
+                logging.warning("grasp request unsuccessful")
+                if prev_return_traj is not None:
+                    execute_plan(prev_return_traj)
+                    prev_return_traj = None
+                break
+            logging.info("grasp request successful")
 
-        pick_traj, place_traj, return_traj = plan
+            plan = get_plan(grasp, q_start)
+            if plan is None:
+                logging.warning("motion plan unsuccessful")
+                if prev_return_traj is not None:
+                    execute_plan(prev_return_traj)
+                    prev_return_traj = None
+                break
+            logging.info("motion plan successful")
 
-        q_pick_after = pick_traj.FinalValue().flatten()
-        q_place = place_traj.FinalValue().flatten()
-        # logging.info(f"q_pick_after: {q_pick_after}")
-        # logging.info(f"q_place: {q_place}")
+            pick_traj, place_traj, return_traj = plan
 
-        q_pick_closed = q_pick_after.copy()
-        q_pick_closed[5] = -0.1
-        close_traj = PiecewisePolynomial.CubicShapePreserving(
-            [0.0, 1.0],
-            np.vstack([q_pick_after, q_pick_closed]).T,
-            True
-        )
-        q_place_closed = q_place.copy()
-        q_place_closed[5] = -0.1
-        open_traj = PiecewisePolynomial.CubicShapePreserving(
-            [0.0, 1.0],
-            np.vstack([q_place_closed, q_place]).T,
-            True
-        )
+            q_pick_after = pick_traj.FinalValue().flatten()
+            q_place = place_traj.FinalValue().flatten()
 
-        control_pts = [
-            control_pt.copy() for control_pt in place_traj.control_points()
-        ]
-        for control_pt in control_pts:
-            control_pt[5, 0] = -0.1
-        place_traj = BsplineTrajectory(place_traj.basis(), control_pts)
+            q_pick_closed = q_pick_after.copy()
+            q_pick_closed[5] = -0.1
+            close_traj = PiecewisePolynomial.CubicShapePreserving(
+                [0.0, 1.0],
+                np.vstack([q_pick_after, q_pick_closed]).T,
+                True
+            )
+            q_place_closed = q_place.copy()
+            q_place_closed[5] = -0.1
+            open_traj = PiecewisePolynomial.CubicShapePreserving(
+                [0.0, 1.0],
+                np.vstack([q_place_closed, q_place]).T,
+                True
+            )
 
-        full_traj = CompositeTrajectory.AlignAndConcatenate([
-            rest_to_ready_traj,
-            pick_traj,
-            close_traj,
-            place_traj,
-            open_traj,
-            return_traj,
-            ready_to_rest_traj
-        ])
+            control_pts = [
+                control_pt.copy() for control_pt in place_traj.control_points()
+            ]
+            for control_pt in control_pts:
+                control_pt[5, 0] = -0.1
+            place_traj = BsplineTrajectory(place_traj.basis(), control_pts)
 
-        execute_plan(full_traj)
+            full_traj = CompositeTrajectory.AlignAndConcatenate([
+                pick_traj,
+                close_traj,
+                place_traj,
+                open_traj,
+            ])
 
-        # from pathlib import Path
-        # project_dir = Path("/home/noor/so101-drake")
-        # with open(project_dir / "assets" / "example_full_traj.pkl", "wb") as f:
-        #     pickle.dump(full_traj, f)
+            execute_plan(full_traj)
 
-        # q_rest = np.array([0, -1.822, 1.55, 0.906, 0, 0])
-        # q_open = np.array([0, -1.822, 1.55, 0.906, 0, np.pi/4])
-        # traj = CompositeTrajectory.AlignAndConcatenate([
-        #     PiecewisePolynomial.CubicShapePreserving(
-        #         [0.0, 2.0],
-        #         np.vstack([q_rest, q_open]).T,
-        #         True
-        #     ),
-        #     PiecewisePolynomial.CubicShapePreserving(
-        #         [0.0, 2.0],
-        #         np.vstack([q_open, q_rest]).T,
-        #         True
-        #     ),
-        # ])
-        # execute_plan(traj)
+            prev_return_traj = return_traj
+            q_start = q_place
+
+        if prev_return_traj is not None:
+            execute_plan(prev_return_traj)
+        execute_plan(ready_to_rest_traj)
         
     except KeyboardInterrupt:
         logging.info("User keyboard interrupt")
