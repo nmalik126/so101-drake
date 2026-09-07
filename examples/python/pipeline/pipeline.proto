@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package so101;
+
+service Pipeline {
+    rpc GetImage (Request) returns (ImagePairResponse);
+    rpc GetGrasp (ImagePairRequest) returns (GraspResponse);
+    rpc GetPlan (GraspRequest) returns (PlanTrajectoriesResponse);
+    rpc ExecutePlan (TrajectoryRequest) returns (Response);
+}
+
+message Request {
+    string id = 1;
+}
+
+message Response {
+    string id = 1;
+    bool success = 2;
+}
+
+message ImagePair {
+    bytes depth_data = 1;
+    bytes color_data = 2;
+}
+
+message ImagePairRequest {
+    Request request = 1;
+    ImagePair imagePair = 2;
+}
+
+message ImagePairResponse {
+    Response response = 1;
+    ImagePair imagePair = 2;
+}
+
+message Grasp {
+    repeated float grasp = 1;
+}
+
+message GraspRequest {
+    Request request = 1;
+    Grasp grasp = 2;
+    repeated float q_start = 3;
+}
+
+message GraspResponse {
+    Response response = 1;
+    Grasp grasp = 2;
+}
+
+message Trajectory {
+    bytes traj = 1;
+}
+
+message PlanTrajectories {
+    Trajectory pick_traj = 1;
+    Trajectory place_traj = 2;
+    Trajectory return_traj = 3;
+}
+
+message TrajectoryRequest {
+    Request request = 1;
+    Trajectory traj = 2;
+}
+
+message PlanTrajectoriesResponse {
+    Response response = 1;
+    PlanTrajectories planTrajectories = 2;
+}
