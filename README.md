@@ -2,7 +2,7 @@
 
 End-to-end bin-picking system in C++ using the LeRobot SO-101 and Drake. 
 
-https://github.com/user-attachments/assets/c4d9d4c8-5a4f-4e23-8e6a-f9b24d24e5f0
+[![Demo Video](https://img.youtube.com/vi/ouLaz21nL20/0.jpg)](https://www.youtube.com/watch?v=ouLaz21nL20)
 
 ## Usage
 
